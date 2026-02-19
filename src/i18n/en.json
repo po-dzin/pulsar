@@ -60,7 +60,7 @@
   "auth": {
     "title": "Sign in required",
     "body": "You need Google auth to save progress and access diagnostics.",
-    "google": "Continue with Google",
+    "google": "Sign in / Register",
     "logout": "Sign out"
   },
   "result": {
