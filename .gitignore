@@ -31,3 +31,8 @@ tmp
 # supabase local
 .supabase
 .vercel
+
+# non-product artifacts in this repo
+docs
+tests
+.github
