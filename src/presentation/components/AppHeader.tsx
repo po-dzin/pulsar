@@ -3,6 +3,7 @@ import type { Locale } from "@/domain/psychosomatic/model";
 import type { Dictionary } from "@/presentation/i18n/dictionaries";
 import { LocaleLinks, withLang } from "@/presentation/components/LocaleLinks";
 import { AuthControls } from "@/presentation/components/AuthControls";
+import { ThemeToggle } from "@/presentation/components/ThemeToggle";
 
 export const AppHeader = ({
   locale,
@@ -44,6 +45,7 @@ export const AppHeader = ({
           </nav>
         </div>
         <div className="inline-row">
+          <ThemeToggle />
           <LocaleLinks pathname={pathname} locale={locale} />
           <AuthControls
             isAuthenticated={isAuthenticated}
