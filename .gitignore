@@ -1,0 +1,32 @@
+# dependencies
+node_modules
+
+# next
+.next
+out
+*.tsbuildinfo
+
+# tests
+playwright-report
+test-results
+coverage
+
+# env
+.env.local
+.env
+
+# misc
+.DS_Store
+*.log
+*.swp
+*.swo
+
+# local/dev-only
+.venv
+tmp
+.cache
+.idea
+.vscode
+
+# supabase local
+.supabase

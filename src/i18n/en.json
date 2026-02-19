@@ -1,0 +1,73 @@
+{
+  "brand": "IMPULSE",
+  "nav": {
+    "mission": "Mission",
+    "diagnostics": "Diagnostics",
+    "products": "Products",
+    "knowledge": "Knowledge Base",
+    "about": "About"
+  },
+  "common": {
+    "primaryCta": "Start diagnostics",
+    "disclaimer": "IMPULSE diagnostics is a self-observation tool and not a medical diagnosis.",
+    "language": "Language",
+    "loading": "Loading..."
+  },
+  "home": {
+    "title": "Diagnostics -> integration -> transformation without rollback",
+    "subtitle": "Understand your current state and move to your next clear step.",
+    "sections": {
+      "approachTitle": "System, not chaos",
+      "approachBody": "We focus on practical integration: awareness, regulation, and sustainable action.",
+      "loopTitle": "How MVP works",
+      "loopBody": "Google sign-in, psychosomatic diagnostics, inline result, recommendations, products and consultation."
+    }
+  },
+  "diagnostics": {
+    "title": "Psychosomatic diagnostics",
+    "subtitle": "16 questions, 7-10 minutes. Save progress and get your result inline.",
+    "consent": "I agree to process my diagnostic data for result storage and progress tracking.",
+    "start": "Start test",
+    "next": "Next",
+    "finish": "Complete test",
+    "history": "Your history",
+    "secondTestTitle": "Physical diagnostics system",
+    "secondTestBody": "Extended physical diagnostics is in progress. Join waitlist to get early access.",
+    "secondTestCta": "Join waitlist"
+  },
+  "products": {
+    "title": "Products and consultation",
+    "subtitle": "Choose a format and submit consultation request.",
+    "consultTitle": "Personal consultation",
+    "consultName": "Name",
+    "consultContact": "Contact (email/telegram)",
+    "consultMessage": "What do you need help with?",
+    "consultSubmit": "Send request",
+    "consultSuccess": "Your request is sent. We will contact you shortly."
+  },
+  "knowledge": {
+    "title": "Knowledge base",
+    "subtitle": "Short practical cards and notes.",
+    "open": "Open"
+  },
+  "about": {
+    "title": "About the author",
+    "body": "Practical, system-oriented transformation approach across body, psyche, attention and behavior."
+  },
+  "auth": {
+    "title": "Sign in required",
+    "body": "You need Google auth to save progress and access diagnostics.",
+    "google": "Continue with Google",
+    "logout": "Sign out"
+  },
+  "result": {
+    "title": "Your result",
+    "overall": "Overall state",
+    "level": "Level",
+    "strong": "Strong zones",
+    "growth": "Growth zones",
+    "recommendations": "Recommendations",
+    "toProducts": "Go to products",
+    "toKnowledge": "Open knowledge base"
+  }
+}

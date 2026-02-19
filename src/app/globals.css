@@ -1,0 +1,262 @@
+:root {
+  --bg: #f5f6f8;
+  --surface: #ffffff;
+  --text: #0b0d10;
+  --muted: #1d2129;
+  --border: #e2e6ea;
+  --accent: #3dffb5;
+  --danger: #ff3b30;
+  --success: #34c759;
+  --warning: #ffcc00;
+  --radius-lg: 20px;
+  --space-1: 8px;
+  --space-2: 16px;
+  --space-3: 24px;
+  --space-4: 32px;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  font-family: "Manrope", "Avenir Next", "Segoe UI", sans-serif;
+  color: var(--text);
+  background: radial-gradient(circle at top right, #e8fff4 0%, var(--bg) 45%, #eef2f5 100%);
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+:focus-visible {
+  outline: 2px solid var(--text);
+  outline-offset: 2px;
+}
+
+.app-shell {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.topbar {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  backdrop-filter: blur(12px);
+  background: color-mix(in srgb, var(--surface) 88%, transparent);
+  border-bottom: 1px solid var(--border);
+}
+
+.topbar-inner {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 14px 16px;
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.brand {
+  font-size: 1.35rem;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+}
+
+.nav-links {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.nav-link {
+  padding: 6px 10px;
+  border-radius: 999px;
+  border: 1px solid transparent;
+  color: #1d2935;
+}
+
+.nav-link:hover {
+  border-color: var(--border);
+  background: color-mix(in srgb, var(--surface) 70%, #f3f5f7);
+}
+
+.main {
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 28px 16px 72px;
+  flex: 1;
+}
+
+.page-title {
+  font-size: clamp(1.8rem, 4.4vw, 3.1rem);
+  margin: 0 0 10px;
+}
+
+.page-subtitle {
+  margin: 0;
+  color: color-mix(in srgb, var(--muted) 88%, white);
+  max-width: 760px;
+}
+
+.grid {
+  margin-top: 22px;
+  display: grid;
+  gap: 14px;
+}
+
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 18px;
+  box-shadow: 0 6px 20px rgba(14, 17, 24, 0.05);
+}
+
+.card h2,
+.card h3 {
+  margin-top: 0;
+}
+
+.button {
+  border: none;
+  border-radius: 12px;
+  padding: 10px 14px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: transform 120ms ease, opacity 120ms ease;
+}
+
+.button:active {
+  transform: translateY(1px);
+}
+
+.button-primary {
+  background: var(--text);
+  color: #fff;
+}
+
+.button-accent {
+  background: var(--accent);
+  color: #042815;
+}
+
+.button-muted {
+  background: #edf1f4;
+  color: var(--text);
+}
+
+.button-danger {
+  background: var(--danger);
+  color: #fff;
+}
+
+.button[disabled] {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.field {
+  display: grid;
+  gap: 6px;
+}
+
+.input,
+.textarea,
+.select {
+  width: 100%;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 10px 12px;
+  background: #fff;
+}
+
+.textarea {
+  min-height: 110px;
+  resize: vertical;
+}
+
+.list {
+  display: grid;
+  gap: 10px;
+}
+
+.answer-grid {
+  display: grid;
+  gap: 8px;
+}
+
+.answer-option {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 10px;
+  background: #fff;
+}
+
+.answer-option[data-selected="true"] {
+  border-color: #38d392;
+  background: #edfff7;
+}
+
+.inline-row {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.muted {
+  color: #4a5562;
+}
+
+footer {
+  border-top: 1px solid var(--border);
+  background: color-mix(in srgb, var(--surface) 88%, transparent);
+}
+
+.footer-inner {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 14px 16px;
+  color: #44505c;
+  font-size: 0.9rem;
+}
+
+.prose h1,
+.prose h2,
+.prose h3 {
+  margin-top: 1.2em;
+  margin-bottom: 0.5em;
+}
+
+.prose p,
+.prose li {
+  line-height: 1.6;
+}
+
+@media (min-width: 768px) {
+  .grid.cols-2 {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .grid.cols-3 {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
