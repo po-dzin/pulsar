@@ -15,8 +15,9 @@ test.describe("MVP public smoke", () => {
     await expect(page.getByText(/не медицинск|not a medical diagnosis/i)).toBeVisible();
   });
 
-  test("diagnostics is protected by auth gate", async ({ page }) => {
+  test("diagnostics is accessible without auth; sign-in is optional for saving", async ({ page }) => {
     await page.goto("/diagnostics");
+    await expect(page.getByTestId("consent-checkbox")).toBeVisible();
     await expect(page.getByTestId("google-auth-button")).toBeVisible();
   });
 

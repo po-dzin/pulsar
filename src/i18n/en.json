@@ -31,6 +31,9 @@
     "next": "Next",
     "finish": "Complete test",
     "history": "Your history",
+    "guestModeNotice": "The test is available without registration. Google sign-in is required only for saving progress and history.",
+    "historyGuestEmpty": "History is available after Google sign-in.",
+    "savePrompt": "Sign in with Google to save this result and continue later.",
     "secondTestTitle": "Physical diagnostics system",
     "secondTestBody": "Extended physical diagnostics is in progress. Join waitlist to get early access.",
     "secondTestCta": "Join waitlist"

@@ -3,8 +3,10 @@
 import { useMemo, useState } from "react";
 import type { Locale, AnswerValue, PsychoAnswers, PsychoScore } from "@/domain/psychosomatic/model";
 import { psychosomaticQuestions, getQuestionOptions, levelLabels, zoneLabels } from "@/domain/psychosomatic/questions";
+import { scorePsychosomatic } from "@/domain/psychosomatic/scoring";
 
 type Props = {
+  isAuthenticated: boolean;
   locale: Locale;
   labels: {
     consent: string;
@@ -20,6 +22,9 @@ type Props = {
     toProducts: string;
     toKnowledge: string;
     historyTitle: string;
+    guestModeNotice: string;
+    historyGuestEmpty: string;
+    savePrompt: string;
   };
   productsHref: string;
   knowledgeHref: string;
@@ -28,7 +33,7 @@ type Props = {
 
 const orderedAnswers: AnswerValue[] = ["none", "rare", "sometimes", "often"];
 
-export const DiagnosticsFlow = ({ locale, labels, productsHref, knowledgeHref, initialHistory }: Props) => {
+export const DiagnosticsFlow = ({ isAuthenticated, locale, labels, productsHref, knowledgeHref, initialHistory }: Props) => {
   const [consent, setConsent] = useState(false);
   const [started, setStarted] = useState(false);
   const [step, setStep] = useState(0);
@@ -47,6 +52,7 @@ export const DiagnosticsFlow = ({ locale, labels, productsHref, knowledgeHref, i
   };
 
   const saveDraft = async () => {
+    if (!isAuthenticated) return;
     if (!current) return;
     const answerKey = answers[current.key];
     if (!answerKey) return;
@@ -76,6 +82,15 @@ export const DiagnosticsFlow = ({ locale, labels, productsHref, knowledgeHref, i
     }
 
     const payloadAnswers = answers as PsychoAnswers;
+    if (!isAuthenticated) {
+      const localResult = scorePsychosomatic(payloadAnswers);
+      setBusy(false);
+      if (localResult.ok) {
+        setResult(localResult.value);
+      }
+      return;
+    }
+
     setBusy(true);
     const response = await fetch("/api/diagnostics/psychosomatic/complete", {
       method: "POST",
@@ -97,6 +112,7 @@ export const DiagnosticsFlow = ({ locale, labels, productsHref, knowledgeHref, i
   if (!started) {
     return (
       <section className="card">
+        {!isAuthenticated ? <p className="muted">{labels.guestModeNotice}</p> : null}
         <label className="answer-option" data-selected={consent}>
           <input
             type="checkbox"
@@ -170,6 +186,8 @@ export const DiagnosticsFlow = ({ locale, labels, productsHref, knowledgeHref, i
           ))}
         </div>
 
+        {!isAuthenticated ? <p className="muted">{labels.savePrompt}</p> : null}
+
         <div className="inline-row" style={{ marginTop: 12 }}>
           <a href={productsHref} className="button button-primary" data-testid="cta-go-products">
             {labels.toProducts}
@@ -220,14 +238,17 @@ export const DiagnosticsFlow = ({ locale, labels, productsHref, knowledgeHref, i
       <section style={{ marginTop: 16 }}>
         <h3>{labels.historyTitle}</h3>
         <div className="list">
-          {initialHistory.slice(0, 5).map((item) => (
-            <div key={item.id} className="answer-option">
-              <span>{new Date(item.createdAt).toLocaleDateString()}</span>
-              <strong>{item.overallPct}%</strong>
-              <span className="muted">{item.level}</span>
-            </div>
-          ))}
-          {initialHistory.length === 0 ? <p className="muted">No history yet.</p> : null}
+          {!isAuthenticated ? <p className="muted">{labels.historyGuestEmpty}</p> : null}
+          {isAuthenticated
+            ? initialHistory.slice(0, 5).map((item) => (
+                <div key={item.id} className="answer-option">
+                  <span>{new Date(item.createdAt).toLocaleDateString()}</span>
+                  <strong>{item.overallPct}%</strong>
+                  <span className="muted">{item.level}</span>
+                </div>
+              ))
+            : null}
+          {isAuthenticated && initialHistory.length === 0 ? <p className="muted">No history yet.</p> : null}
         </div>
       </section>
     </section>
