@@ -1,4 +1,5 @@
 import { SupabaseAnalyticsRepository } from "@/infrastructure/repositories/analyticsRepository";
+import { SupabaseAdminRolesRepository } from "@/infrastructure/repositories/adminRolesRepository";
 import { SupabaseDiagnosticsRepository } from "@/infrastructure/repositories/diagnosticsRepository";
 import { SupabaseKbRepository } from "@/infrastructure/repositories/kbRepository";
 import { SupabaseLeadsRepository } from "@/infrastructure/repositories/leadsRepository";
@@ -12,6 +13,7 @@ export const createRuntime = async () => {
   return {
     supabase,
     analytics: new SupabaseAnalyticsRepository(supabase),
+    adminRolesRepo: new SupabaseAdminRolesRepository(supabase),
     diagnosticsRepo: new SupabaseDiagnosticsRepository(supabase),
     leadsRepo: new SupabaseLeadsRepository(supabase),
     kbRepo: new SupabaseKbRepository(supabase),

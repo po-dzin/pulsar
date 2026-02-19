@@ -6,6 +6,7 @@ import { AdminUsersPanel } from "@/presentation/components/AdminUsersPanel";
 import { AdminProgressPanel } from "@/presentation/components/AdminProgressPanel";
 import { AdminLeadsPanel } from "@/presentation/components/AdminLeadsPanel";
 import { AdminContentPanel } from "@/presentation/components/AdminContentPanel";
+import { AdminRolesPanel } from "@/presentation/components/AdminRolesPanel";
 
 export const dynamic = "force-dynamic";
 
@@ -42,6 +43,7 @@ export default async function AdminPage({
         </section>
       ) : (
         <div className="grid cols-2">
+          <AdminRolesPanel />
           <AdminUsersPanel />
           <AdminProgressPanel />
           <AdminLeadsPanel />

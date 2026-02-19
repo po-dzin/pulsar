@@ -41,6 +41,15 @@ export class SupabaseProfilesRepository implements ProfilesRepositoryPort {
     return data ? mapProfile(data as ProfileDbRow) : null;
   }
 
+  async getProfileByEmail(email: string): Promise<UserProfile | null> {
+    const { data, error } = await this.supabase.from("profiles").select("*").eq("email", email).maybeSingle();
+    if (error) {
+      throw error;
+    }
+
+    return data ? mapProfile(data as ProfileDbRow) : null;
+  }
+
   async upsertProfile(profile: Omit<UserProfile, "createdAt">): Promise<void> {
     const { error } = await this.supabase.from("profiles").upsert(
       {

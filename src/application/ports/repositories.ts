@@ -7,6 +7,7 @@ import type {
 } from "@/domain/psychosomatic/model";
 
 export type LeadStatus = "new" | "in_progress" | "done" | "archived";
+export type AdminRole = "admin" | "editor";
 
 export type UserProfile = {
   id: string;
@@ -113,9 +114,22 @@ export interface KbRepositoryPort {
 export interface ProfilesRepositoryPort {
   listProfiles(): Promise<UserProfile[]>;
   getProfileById(userId: string): Promise<UserProfile | null>;
+  getProfileByEmail(email: string): Promise<UserProfile | null>;
   upsertProfile(profile: Omit<UserProfile, "createdAt">): Promise<void>;
 }
 
 export interface WaitlistRepositoryPort {
   addSecondTestWaitlist(userId: string, email: string, locale: Locale): Promise<void>;
+}
+
+export type AdminRoleRow = {
+  userId: string;
+  role: AdminRole;
+  createdAt: string;
+};
+
+export interface AdminRolesRepositoryPort {
+  listRoles(): Promise<AdminRoleRow[]>;
+  upsertRole(userId: string, role: AdminRole): Promise<void>;
+  removeRole(userId: string, role?: AdminRole): Promise<void>;
 }

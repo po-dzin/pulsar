@@ -38,6 +38,9 @@ export const AppHeader = ({
             <Link href={withLang("/about", locale)} className="nav-link">
               {dictionary.nav.about}
             </Link>
+            <Link href={withLang("/admin", locale)} className="nav-link">
+              Admin
+            </Link>
           </nav>
         </div>
         <div className="inline-row">

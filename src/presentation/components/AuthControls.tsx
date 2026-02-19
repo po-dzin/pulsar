@@ -15,7 +15,9 @@ export const AuthControls = ({ isAuthenticated, loginLabel, logoutLabel }: Props
   const signIn = async () => {
     setBusy(true);
     const supabase = getSupabaseBrowserClient();
-    await supabase.auth.signInWithOAuth({ provider: "google", options: { redirectTo: window.location.href } });
+    const nextPath = `${window.location.pathname}${window.location.search}`;
+    const redirectTo = `${window.location.origin}/auth/callback?next=${encodeURIComponent(nextPath)}`;
+    await supabase.auth.signInWithOAuth({ provider: "google", options: { redirectTo } });
     setBusy(false);
   };
 
@@ -23,7 +25,7 @@ export const AuthControls = ({ isAuthenticated, loginLabel, logoutLabel }: Props
     setBusy(true);
     const supabase = getSupabaseBrowserClient();
     await supabase.auth.signOut();
-    window.location.reload();
+    window.location.assign("/");
   };
 
   if (isAuthenticated) {
