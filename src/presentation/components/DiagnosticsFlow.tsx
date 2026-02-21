@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import type { Locale, AnswerValue, PsychoAnswers, PsychoScore } from "@/domain/psychosomatic/model";
 import { psychosomaticQuestions, getQuestionOptions, levelLabels, zoneLabels } from "@/domain/psychosomatic/questions";
 import { scorePsychosomatic } from "@/domain/psychosomatic/scoring";
@@ -9,10 +9,12 @@ type Props = {
   isAuthenticated: boolean;
   locale: Locale;
   labels: {
+    description: string;
     consent: string;
     start: string;
     next: string;
     finish: string;
+    restart: string;
     resultTitle: string;
     overallLabel: string;
     levelLabel: string;
@@ -25,6 +27,8 @@ type Props = {
     guestModeNotice: string;
     historyGuestEmpty: string;
     savePrompt: string;
+    testSelectorPsychosomatic: string;
+    testSelectorPhysical: string;
   };
   productsHref: string;
   knowledgeHref: string;
@@ -36,55 +40,62 @@ const orderedAnswers: AnswerValue[] = ["none", "rare", "sometimes", "often"];
 export const DiagnosticsFlow = ({ isAuthenticated, locale, labels, productsHref, knowledgeHref, initialHistory }: Props) => {
   const [consent, setConsent] = useState(false);
   const [started, setStarted] = useState(false);
-  const [step, setStep] = useState(0);
   const [answers, setAnswers] = useState<Partial<PsychoAnswers>>({});
-  const [sessionId] = useState(() => crypto.randomUUID());
+  const [sessionId, setSessionId] = useState(() => crypto.randomUUID());
   const [result, setResult] = useState<PsychoScore | null>(null);
   const [busy, setBusy] = useState(false);
+  const questionRefs = useRef<Map<number, HTMLElement>>(new Map());
 
-  const current = psychosomaticQuestions[step];
-  const selected = answers[current?.key];
-  const progressPct = useMemo(() => Math.round((step / psychosomaticQuestions.length) * 100), [step]);
+  const answeredCount = useMemo(
+    () => psychosomaticQuestions.filter((q) => answers[q.key] !== undefined).length,
+    [answers]
+  );
+  const progressPct = useMemo(
+    () => Math.round((answeredCount / psychosomaticQuestions.length) * 100),
+    [answeredCount]
+  );
+  const allAnswered = answeredCount === psychosomaticQuestions.length;
 
-  const selectAnswer = (value: AnswerValue) => {
-    if (!current) return;
-    setAnswers((prev) => ({ ...prev, [current.key]: value }));
-  };
+  const selectAnswer = useCallback(
+    (key: string, value: AnswerValue) => {
+      setAnswers((prev) => ({ ...prev, [key]: value }));
 
-  const saveDraft = async () => {
-    if (!isAuthenticated) return;
-    if (!current) return;
-    const answerKey = answers[current.key];
-    if (!answerKey) return;
+      // Auto-scroll to next unanswered question
+      const currentIndex = psychosomaticQuestions.findIndex((q) => q.key === key);
+      const nextUnanswered = psychosomaticQuestions.findIndex(
+        (q, i) => i > currentIndex && !(key === q.key || answers[q.key] !== undefined)
+      );
+      if (nextUnanswered !== -1) {
+        setTimeout(() => {
+          const el = questionRefs.current.get(nextUnanswered);
+          el?.scrollIntoView({ behavior: "smooth", block: "center" });
+        }, 120);
+      }
 
-    await fetch("/api/diagnostics/psychosomatic/draft", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        sessionId,
-        questionKey: current.key,
-        answerKey,
-        consentAcceptedAt: consent ? new Date().toISOString() : undefined,
-      }),
-    });
-  };
+      // Save draft for authenticated users
+      if (isAuthenticated) {
+        fetch("/api/diagnostics/psychosomatic/draft", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            sessionId,
+            questionKey: key,
+            answerKey: value,
+            consentAcceptedAt: consent ? new Date().toISOString() : undefined,
+          }),
+        }).catch(() => { });
+      }
+    },
+    [answers, consent, isAuthenticated, sessionId]
+  );
 
-  const onNext = async () => {
-    if (!current || !answers[current.key]) return;
-
-    setBusy(true);
-    await saveDraft();
-    setBusy(false);
-
-    if (step + 1 < psychosomaticQuestions.length) {
-      setStep((prev) => prev + 1);
-      return;
-    }
+  const handleSubmit = async () => {
+    if (!allAnswered) return;
 
     const payloadAnswers = answers as PsychoAnswers;
+
     if (!isAuthenticated) {
       const localResult = scorePsychosomatic(payloadAnswers);
-      setBusy(false);
       if (localResult.ok) {
         setResult(localResult.value);
       }
@@ -92,55 +103,32 @@ export const DiagnosticsFlow = ({ isAuthenticated, locale, labels, productsHref,
     }
 
     setBusy(true);
-    const response = await fetch("/api/diagnostics/psychosomatic/complete", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        sessionId,
-        answers: payloadAnswers,
-      }),
-    });
-
-    const data = await response.json();
-    setBusy(false);
-
-    if (response.ok && data.result) {
-      setResult(data.result as PsychoScore);
+    try {
+      const response = await fetch("/api/diagnostics/psychosomatic/complete", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ sessionId, answers: payloadAnswers }),
+      });
+      const data = await response.json();
+      if (response.ok && data.result) {
+        setResult(data.result as PsychoScore);
+      }
+    } finally {
+      setBusy(false);
     }
   };
 
-  if (!started) {
-    return (
-      <section className="card">
-        {!isAuthenticated ? <p className="muted">{labels.guestModeNotice}</p> : null}
-        <label className="answer-option" data-selected={consent}>
-          <input
-            type="checkbox"
-            checked={consent}
-            onChange={(e) => setConsent(e.target.checked)}
-            data-testid="consent-checkbox"
-          />
-          <span>{labels.consent}</span>
-        </label>
+  const handleRestart = () => {
+    setResult(null);
+    setStarted(false);
+    setAnswers({});
+    setSessionId(crypto.randomUUID());
+  };
 
-        <div className="inline-row" style={{ marginTop: 12 }}>
-          <button
-            type="button"
-            className="button button-primary"
-            onClick={() => setStarted(true)}
-            disabled={!consent}
-            data-testid="start-psychotest-button"
-          >
-            {labels.start}
-          </button>
-        </div>
-      </section>
-    );
-  }
-
+  /* ── Result view ─────────────────────────────────────────── */
   if (result) {
     return (
-      <section className="card" data-testid="result-card">
+      <section className="diagnostics-result" data-testid="result-card">
         <h2>{labels.resultTitle}</h2>
         <p data-testid="result-overall-pct">
           {labels.overallLabel}: <strong>{result.overallPct}%</strong>
@@ -186,71 +174,169 @@ export const DiagnosticsFlow = ({ isAuthenticated, locale, labels, productsHref,
           ))}
         </div>
 
-        {!isAuthenticated ? <p className="muted">{labels.savePrompt}</p> : null}
+        {!isAuthenticated ? (
+          <div className="card" style={{ padding: 16, marginTop: 16, border: '1px solid var(--color-accent-dim)' }}>
+            <p style={{ margin: 0, color: 'var(--color-text)' }}>{labels.guestModeNotice}</p>
+          </div>
+        ) : null}
 
-        <div className="inline-row" style={{ marginTop: 12 }}>
+        <div className="inline-row" style={{ marginTop: 16 }}>
           <a href={productsHref} className="button button-primary" data-testid="cta-go-products">
             {labels.toProducts}
           </a>
           <a href={knowledgeHref} className="button button-muted">
             {labels.toKnowledge}
           </a>
+          <button
+            type="button"
+            className="button button-muted"
+            onClick={handleRestart}
+            data-testid="restart-button"
+          >
+            {labels.restart}
+          </button>
         </div>
       </section>
     );
   }
 
-  const options = current ? getQuestionOptions(current, locale) : null;
-
-  return (
-    <section className="card">
-      <p className="muted">Progress: {progressPct}%</p>
-      <h2>{current?.title[locale]}</h2>
-      <p className="muted">{current?.hint[locale]}</p>
-
-      <div className="answer-grid">
-        {orderedAnswers.map((value, index) => (
-          <button
-            key={value}
-            type="button"
-            className="answer-option"
-            data-selected={selected === value}
-            onClick={() => selectAnswer(value)}
-            data-testid={`answer-option-${step}-${index}`}
-          >
-            <span>{options?.[value]}</span>
+  /* ── Pre-start: consent + description ────────────────────── */
+  if (!started) {
+    return (
+      <>
+        {/* Test selector */}
+        <div className="test-selector">
+          <button type="button" className="test-selector-tab" data-active={true}>
+            {labels.testSelectorPsychosomatic}
           </button>
-        ))}
-      </div>
+          <button type="button" className="test-selector-tab" disabled>
+            {labels.testSelectorPhysical}
+          </button>
+        </div>
 
-      <div className="inline-row" style={{ marginTop: 12 }}>
-        <button
-          type="button"
-          className="button button-primary"
-          onClick={onNext}
-          disabled={!selected || busy}
-          data-testid="question-next-button"
-        >
-          {step + 1 < psychosomaticQuestions.length ? labels.next : labels.finish}
+        <section className="card">
+          <p className="muted">{labels.description}</p>
+
+
+
+          <label className="consent-row" data-selected={consent}>
+            <input
+              type="checkbox"
+              checked={consent}
+              onChange={(e) => setConsent(e.target.checked)}
+              data-testid="consent-checkbox"
+            />
+            <span>{labels.consent}</span>
+          </label>
+
+          <div className="inline-row" style={{ marginTop: 12 }}>
+            <button
+              type="button"
+              className="button button-primary"
+              onClick={() => setStarted(true)}
+              disabled={!consent}
+              data-testid="start-psychotest-button"
+            >
+              {labels.start}
+            </button>
+          </div>
+        </section>
+      </>
+    );
+  }
+
+  /* ── Questions list (all visible, scrollable) ────────────── */
+  return (
+    <>
+      {/* Test selector */}
+      <div className="test-selector">
+        <button type="button" className="test-selector-tab" data-active={true}>
+          {labels.testSelectorPsychosomatic}
+        </button>
+        <button type="button" className="test-selector-tab" disabled>
+          {labels.testSelectorPhysical}
         </button>
       </div>
 
-      <section style={{ marginTop: 16 }}>
+      {/* Progress bar */}
+      <div className="progress-bar-wrapper">
+        <div className="progress-bar-fill" style={{ width: `${progressPct}%` }} />
+        <span className="progress-bar-label">{progressPct}%</span>
+      </div>
+
+      {/* All questions */}
+      <div className="questions-list">
+        {psychosomaticQuestions.map((question, index) => {
+          // Step-by-step reveal: only show if previous are answered
+          if (index > answeredCount) return null;
+
+          const options = getQuestionOptions(question, locale);
+          const selected = answers[question.key];
+          return (
+            <section
+              key={question.key}
+              className="question-card"
+              data-answered={selected !== undefined || undefined}
+              ref={(el) => {
+                if (el) questionRefs.current.set(index, el);
+              }}
+            >
+              <div className="question-header">
+                <span className="question-number">{index + 1}</span>
+                <div>
+                  <h3 className="question-title">{question.title[locale]}</h3>
+                  <p className="question-hint muted">{question.hint[locale]}</p>
+                </div>
+              </div>
+              <div className="answer-row">
+                {orderedAnswers.map((value, answerIndex) => (
+                  <button
+                    key={value}
+                    type="button"
+                    className="answer-pill"
+                    data-selected={selected === value || undefined}
+                    onClick={() => selectAnswer(question.key, value)}
+                    data-testid={`answer-option-${index}-${answerIndex}`}
+                  >
+                    {options[value]}
+                  </button>
+                ))}
+              </div>
+            </section>
+          );
+        })}
+      </div>
+
+      {/* Submit button */}
+      <div className="inline-row" style={{ marginTop: 16 }}>
+        <button
+          type="button"
+          className="button button-primary"
+          onClick={handleSubmit}
+          disabled={!allAnswered || busy}
+          data-testid="question-next-button"
+        >
+          {labels.finish}
+        </button>
+      </div>
+
+      {/* History */}
+      <section style={{ marginTop: 24 }}>
         <h3>{labels.historyTitle}</h3>
         <div className="list">
           {!isAuthenticated ? <p className="muted">{labels.historyGuestEmpty}</p> : null}
           {isAuthenticated
             ? initialHistory.slice(0, 5).map((item) => (
-                <div key={item.id} className="answer-option">
-                  <span>{new Date(item.createdAt).toLocaleDateString()}</span>
-                  <strong>{item.overallPct}%</strong>
-                  <span className="muted">{item.level}</span>
-                </div>
-              ))
+              <div key={item.id} className="answer-option">
+                <span>{new Date(item.createdAt).toLocaleDateString()}</span>
+                <strong>{item.overallPct}%</strong>
+                <span className="muted">{item.level}</span>
+              </div>
+            ))
             : null}
           {isAuthenticated && initialHistory.length === 0 ? <p className="muted">No history yet.</p> : null}
         </div>
       </section>
-    </section>
+    </>
   );
 };

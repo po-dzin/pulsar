@@ -15,8 +15,14 @@ export const LocaleLinks = ({
 }) => {
   const nextLocale: Locale = locale === "ru" ? "en" : "ru";
   return (
-    <Link href={withLang(pathname, nextLocale)} className="nav-link" data-testid="locale-switcher">
-      {nextLocale.toUpperCase()}
+    <Link
+      href={withLang(pathname, nextLocale)}
+      className="locale-btn"
+      data-testid="locale-switcher"
+      title={`Switch to ${nextLocale.toUpperCase()}`}
+      aria-label={`Switch to ${nextLocale.toUpperCase()}`}
+    >
+      {locale.toUpperCase()}
     </Link>
   );
 };

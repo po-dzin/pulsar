@@ -10,33 +10,87 @@ export default async function MissionPage({
 }) {
   const params = await searchParams;
   const context = await getViewContext("/", params.lang);
+  const { dictionary: d, locale } = context;
 
   return (
     <PageScaffold
-      locale={context.locale}
-      dictionary={context.dictionary}
+      locale={locale}
+      dictionary={d}
       pathname={context.pathname}
       isAuthenticated={Boolean(context.userId)}
     >
-      <h1 className="page-title">{context.dictionary.home.title}</h1>
-      <p className="page-subtitle">{context.dictionary.home.subtitle}</p>
+      {/* ── HERO ── full-viewport opening screen */}
+      <section className="landing-section landing-hero">
+        <div className="landing-section-inner">
+          <p className="landing-eyebrow">{d.home.eyebrow}</p>
+          <h1 className="landing-headline">{d.home.title}</h1>
+          <p className="landing-sub">{d.home.subtitle}</p>
+          <div className="landing-cta-row">
+            <Link href={withLang("/diagnostics", locale)} className="button button-primary button-lg">
+              {d.home.heroCta}
+            </Link>
+          </div>
+        </div>
+      </section>
 
-      <div className="grid cols-2">
-        <section className="card">
-          <h2>{context.dictionary.home.sections.approachTitle}</h2>
-          <p className="muted">{context.dictionary.home.sections.approachBody}</p>
-        </section>
-        <section className="card">
-          <h2>{context.dictionary.home.sections.loopTitle}</h2>
-          <p className="muted">{context.dictionary.home.sections.loopBody}</p>
-        </section>
-      </div>
+      {/* ── DIAGNOSTICS screen */}
+      <section className="landing-section landing-diagnostics">
+        <div className="landing-section-inner">
+          <p className="landing-eyebrow">{d.nav.diagnostics}</p>
+          <h2 className="landing-headline">{d.home.sections.approachTitle}</h2>
+          <p className="landing-sub">{d.diagnostics.description}</p>
+          <div className="landing-cta-row">
+            <Link href={withLang("/diagnostics", locale)} className="button button-primary button-lg">
+              {d.common.primaryCta}
+            </Link>
+          </div>
+        </div>
+      </section>
 
-      <div className="inline-row" style={{ marginTop: 16 }}>
-        <Link href={withLang("/diagnostics", context.locale)} className="button button-primary">
-          {context.dictionary.common.primaryCta}
-        </Link>
-      </div>
+      {/* ── PRODUCTS screen */}
+      <section className="landing-section landing-products">
+        <div className="landing-section-inner">
+          <p className="landing-eyebrow">{d.nav.products}</p>
+          <h2 className="landing-headline">{d.products.title}</h2>
+          <p className="landing-sub">{d.products.subtitle}</p>
+          <div className="landing-cta-row">
+            <Link href={withLang("/products", locale)} className="button button-primary button-lg">
+              {d.products.consultSubmit}
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      {/* ── KNOWLEDGE screen */}
+      <section className="landing-section landing-knowledge">
+        <div className="landing-section-inner">
+          <p className="landing-eyebrow">{d.nav.knowledge}</p>
+          <h2 className="landing-headline">{d.knowledge.title}</h2>
+          <p className="landing-sub">{d.knowledge.subtitle}</p>
+          <div className="landing-cta-row">
+            <Link href={withLang("/knowledge", locale)} className="button button-primary button-lg">
+              {d.knowledge.open}
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      {/* ── ABOUT screen */}
+      <section className="landing-section landing-about">
+        <div className="landing-section-inner">
+          <p className="landing-eyebrow">{d.nav.about}</p>
+          <h2 className="landing-headline">{d.about.title}</h2>
+          <p className="landing-sub">{d.about.methodBody}</p>
+          <div className="landing-cta-row">
+            <Link href={withLang("/about", locale)} className="button button-primary button-lg">
+              {d.nav.about}
+            </Link>
+            <Link href={withLang("/diagnostics", locale)} className="button button-muted button-lg">
+              {d.common.primaryCta}
+            </Link>
+          </div>
+        </div>
+      </section>
     </PageScaffold>
   );
 }

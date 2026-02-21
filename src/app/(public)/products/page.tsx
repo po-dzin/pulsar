@@ -30,7 +30,7 @@ export default async function ProductsPage({
         ))}
       </div>
 
-      {context.userId ? (
+      <div style={{ marginTop: 'var(--space-4)' }}>
         <ConsultationForm
           labels={{
             title: context.dictionary.products.consultTitle,
@@ -41,11 +41,7 @@ export default async function ProductsPage({
             success: context.dictionary.products.consultSuccess,
           }}
         />
-      ) : (
-        <section className="card">
-          <p className="muted">{context.dictionary.auth.body}</p>
-        </section>
-      )}
+      </div>
     </PageScaffold>
   );
 }

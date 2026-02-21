@@ -14,6 +14,10 @@
   --space-5: 56px;
   --space-6: 76px;
 
+  --control-height: 44px;
+  --transition-base: all 0.3s cubic-bezier(0.25, 1, 0.5, 1);
+  --space-6: 76px;
+
   --shadow-soft: 0 14px 34px rgba(10, 10, 10, 0.08);
   --shadow-elevated: 0 24px 60px rgba(10, 10, 10, 0.2);
   --focus-ring: 0 0 0 3px rgba(22, 22, 22, 0.24);
@@ -36,6 +40,7 @@
   --color-text-muted: #525252;
   --color-border: rgba(16, 16, 16, 0.14);
   --color-divider: rgba(16, 16, 16, 0.1);
+  --color-accent-dim: rgba(185, 155, 93, 0.3);
   --color-success: #1d7c4f;
   --color-warning: #986f30;
   --color-danger: #b6473f;
@@ -55,6 +60,7 @@
   --color-primary-contrast: #101010;
   --color-accent: #cfb277;
   --color-accent-contrast: #1a140a;
+  --color-accent-dim: rgba(207, 178, 119, 0.3);
   --color-border-strong: rgba(242, 242, 239, 0.3);
   --color-success: #4bb778;
   --color-warning: #d19a41;

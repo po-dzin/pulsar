@@ -1,7 +1,6 @@
 import { getViewContext } from "@/presentation/i18n/getViewContext";
 import { PageScaffold } from "@/presentation/components/PageScaffold";
 import { DiagnosticsFlow } from "@/presentation/components/DiagnosticsFlow";
-import { SecondTestTeaser } from "@/presentation/components/SecondTestTeaser";
 import { withLang } from "@/presentation/components/LocaleLinks";
 import { getPsychoHistoryUseCase } from "@/application/diagnostics/usecases/getPsychoHistory";
 import { createRuntime } from "@/infrastructure/repositories/factory/createRuntime";
@@ -47,10 +46,12 @@ export default async function DiagnosticsPage({
         isAuthenticated={Boolean(context.userId)}
         locale={context.locale}
         labels={{
+          description: context.dictionary.diagnostics.description,
           consent: context.dictionary.diagnostics.consent,
           start: context.dictionary.diagnostics.start,
           next: context.dictionary.diagnostics.next,
           finish: context.dictionary.diagnostics.finish,
+          restart: context.dictionary.diagnostics.restart,
           resultTitle: context.dictionary.result.title,
           overallLabel: context.dictionary.result.overall,
           levelLabel: context.dictionary.result.level,
@@ -63,16 +64,12 @@ export default async function DiagnosticsPage({
           guestModeNotice: context.dictionary.diagnostics.guestModeNotice,
           historyGuestEmpty: context.dictionary.diagnostics.historyGuestEmpty,
           savePrompt: context.dictionary.diagnostics.savePrompt,
+          testSelectorPsychosomatic: context.dictionary.diagnostics.testSelector.psychosomatic,
+          testSelectorPhysical: context.dictionary.diagnostics.testSelector.physical,
         }}
         productsHref={withLang("/products", context.locale)}
         knowledgeHref={withLang("/knowledge", context.locale)}
         initialHistory={history}
-      />
-      <SecondTestTeaser
-        locale={context.locale}
-        title={context.dictionary.diagnostics.secondTestTitle}
-        body={context.dictionary.diagnostics.secondTestBody}
-        cta={context.dictionary.diagnostics.secondTestCta}
       />
     </PageScaffold>
   );

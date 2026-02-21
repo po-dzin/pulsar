@@ -9,7 +9,7 @@ export type ProductCard = {
 export const defaultProducts: ProductCard[] = [
   {
     id: "stabilize-awareness",
-    title: { ru: "Stabilize & Awareness", en: "Stabilize & Awareness" },
+    title: { ru: "Стабилизация и Осознанность", en: "Stabilize & Awareness" },
     description: {
       ru: "Мягкая стабилизация состояния, фокус на осознанности и базовой регуляции.",
       en: "Soft stabilization track with awareness and baseline regulation.",
@@ -17,7 +17,7 @@ export const defaultProducts: ProductCard[] = [
   },
   {
     id: "release-regulation",
-    title: { ru: "Release & Regulation", en: "Release & Regulation" },
+    title: { ru: "Релиз и Регуляция", en: "Release & Regulation" },
     description: {
       ru: "Работа с устойчивыми зажимами и восстановлением переключаемости нервной системы.",
       en: "For persistent tension patterns and nervous system regulation.",
@@ -25,7 +25,7 @@ export const defaultProducts: ProductCard[] = [
   },
   {
     id: "safety-recovery",
-    title: { ru: "Safety & Recovery", en: "Safety & Recovery" },
+    title: { ru: "Безопасность и Восстановление", en: "Safety & Recovery" },
     description: {
       ru: "Контур бережного восстановления и возврата чувства базовой безопасности.",
       en: "Safety-first recovery path for deep stabilization.",
@@ -41,26 +41,15 @@ export const localKbArticleFallback: Record<
     path: Record<Locale, string>;
   }
 > = {
-  "regulation-basics": {
-    title: { ru: "Базовая регуляция", en: "Basic regulation" },
+  "balance-model": {
+    title: { ru: "Твоя модель баланса", en: "Your Balance Model" },
     excerpt: {
-      ru: "Короткий старт для восстановления в течение дня",
-      en: "Short daily reset protocol",
+      ru: "Тело, Сознание, Энергия — эволюция через баланс. Три фундаментальных уровня трансформации.",
+      en: "Body, Consciousness, Energy — evolution through balance. Three fundamental levels of transformation.",
     },
     path: {
-      ru: "src/content/kb/ru/regulation-basics.md",
-      en: "src/content/kb/en/regulation-basics.md",
-    },
-  },
-  "sleep-reset": {
-    title: { ru: "Сон и восстановление", en: "Sleep reset" },
-    excerpt: {
-      ru: "Минимальный протокол сна для нервной системы",
-      en: "Minimal sleep protocol for nervous system",
-    },
-    path: {
-      ru: "src/content/kb/ru/sleep-reset.md",
-      en: "src/content/kb/en/sleep-reset.md",
+      ru: "src/content/kb/ru/balance-model.md",
+      en: "src/content/kb/en/balance-model.md",
     },
   },
 };

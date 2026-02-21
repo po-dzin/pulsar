@@ -20,7 +20,7 @@ export const PageScaffold = ({
   return (
     <div className="app-shell">
       <AppHeader locale={locale} dictionary={dictionary} pathname={pathname} isAuthenticated={isAuthenticated} />
-      <main className="main">{children}</main>
+      <main className={`main ${pathname === "/" ? "main-landing" : ""}`}>{children}</main>
       <Footer dictionary={dictionary} />
     </div>
   );

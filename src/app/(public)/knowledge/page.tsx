@@ -25,13 +25,19 @@ export default async function KnowledgePage({
 
       <div className="grid cols-2">
         {articles.map((article) => (
-          <article className="card" key={article.slug}>
-            <h3>{article.title}</h3>
-            <p className="muted">{article.excerpt}</p>
-            <Link href={withLang(`/knowledge/${article.slug}`, context.locale)} className="button button-muted">
-              {context.dictionary.knowledge.open}
-            </Link>
-          </article>
+          <Link
+            href={withLang(`/knowledge/${article.slug}`, context.locale)}
+            key={article.slug}
+            className="card card-interactive"
+          >
+            <article>
+              <h3>{article.title}</h3>
+              <p className="muted">{article.excerpt}</p>
+              <span className="button button-primary" style={{ display: 'inline-flex', marginTop: '16px' }}>
+                {context.dictionary.knowledge.open}
+              </span>
+            </article>
+          </Link>
         ))}
       </div>
     </PageScaffold>

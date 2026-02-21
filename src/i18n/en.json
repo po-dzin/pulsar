@@ -14,29 +14,37 @@
     "loading": "Loading..."
   },
   "home": {
-    "title": "Diagnostics -> integration -> transformation without rollback",
-    "subtitle": "Understand your current state and move to your next clear step.",
+    "eyebrow": "Algorithm of sustainable evolution",
+    "title": "Transformation without rollbacks",
+    "subtitle": "Body. Consciousness. Energy. Understand your current state and take the first precise step.",
+    "heroCta": "Take the first step",
     "sections": {
       "approachTitle": "System, not chaos",
       "approachBody": "We focus on practical integration: awareness, regulation, and sustainable action.",
-      "loopTitle": "How MVP works",
+      "loopTitle": "How it works",
       "loopBody": "Google sign-in, psychosomatic diagnostics, inline result, recommendations, products and consultation."
     }
   },
   "diagnostics": {
     "title": "Psychosomatic diagnostics",
     "subtitle": "16 questions, 7-10 minutes. Save progress and get your result inline.",
+    "description": "The test covers key psychosomatic areas: sleep, energy, digestion, anxiety and more. Based on your answers you'll get a personalized profile and recommendations.",
     "consent": "I agree to process my diagnostic data for result storage and progress tracking.",
     "start": "Start test",
     "next": "Next",
     "finish": "Complete test",
+    "restart": "Start over",
     "history": "Your history",
-    "guestModeNotice": "The test is available without registration. Google sign-in is required only for saving progress and history.",
+    "guestModeNotice": "Sign in with Google to save your results, track progress history, and download a detailed PDF report after completion.",
     "historyGuestEmpty": "History is available after Google sign-in.",
     "savePrompt": "Sign in with Google to save this result and continue later.",
     "secondTestTitle": "Physical diagnostics system",
     "secondTestBody": "Extended physical diagnostics is in progress. Join waitlist to get early access.",
-    "secondTestCta": "Join waitlist"
+    "secondTestCta": "Join waitlist",
+    "testSelector": {
+      "psychosomatic": "Psychosomatic test",
+      "physical": "Physical test (coming soon)"
+    }
   },
   "products": {
     "title": "Products and consultation",
@@ -54,13 +62,19 @@
     "open": "Open"
   },
   "about": {
-    "title": "About the author",
-    "body": "Practical, system-oriented transformation approach across body, psyche, attention and behavior."
+    "title": "About project & author",
+    "methodTitle": "Method foundation",
+    "methodBody": "A synthesis of over 22 years of work with the body, consciousness, and state, plus the experience of 2000+ clients. I have combined the principles of osteopathy, the depth of ancient practices, and the achievements of modern neurophysiology into a single, logically built system.",
+    "roleTitle": "My role as a space guide",
+    "roleBody1": "I share my personal practical experience and lived path.",
+    "roleBody2": "I pass on only working, proven practices and methods.",
+    "roleBody3": "I conduct meditations and somatic tunings.",
+    "roleBody4": "I help distinguish the True from the False and accompany you out of other people's scenarios into your real life."
   },
   "auth": {
     "title": "Sign in required",
     "body": "You need Google auth to save progress and access diagnostics.",
-    "google": "Sign in / Register",
+    "google": "Sign in",
     "logout": "Sign out"
   },
   "result": {

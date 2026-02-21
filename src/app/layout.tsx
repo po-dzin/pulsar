@@ -3,7 +3,7 @@ import "./brand-tokens.css";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "IMPULSE Portal MVP",
+  title: "IMPULSE",
   description: "IMPULSE diagnostics and transformation portal",
 };
 
