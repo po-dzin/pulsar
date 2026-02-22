@@ -17,6 +17,8 @@ export default async function ProductsPage({
       dictionary={context.dictionary}
       pathname={context.pathname}
       isAuthenticated={Boolean(context.userId)}
+      avatarUrl={context.avatarUrl}
+      displayName={context.displayName}
     >
       <h1 className="page-title">{context.dictionary.products.title}</h1>
       <p className="page-subtitle">{context.dictionary.products.subtitle}</p>

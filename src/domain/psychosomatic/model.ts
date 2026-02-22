@@ -46,9 +46,11 @@ export type ZoneScore = {
   score: number;
 };
 
+export type TranslatedString = Record<Locale, string>;
+
 export type RecommendationBlock = {
-  title: string;
-  items: string[];
+  title: TranslatedString;
+  items: TranslatedString[];
 };
 
 export type PsychoScore = {

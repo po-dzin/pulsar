@@ -5,7 +5,7 @@ import Link from "next/link";
 import type { Locale } from "@/domain/psychosomatic/model";
 import type { Dictionary } from "@/presentation/i18n/dictionaries";
 import { LocaleLinks, withLang } from "@/presentation/components/LocaleLinks";
-import { AuthControls } from "@/presentation/components/AuthControls";
+import { UserMenu } from "@/presentation/components/UserMenu";
 import { ThemeToggle } from "@/presentation/components/ThemeToggle";
 import { BrandLogo } from "@/presentation/components/BrandLogo";
 
@@ -22,11 +22,15 @@ export const AppHeader = ({
   dictionary,
   pathname,
   isAuthenticated,
+  avatarUrl,
+  displayName,
 }: {
   locale: Locale;
   dictionary: Dictionary;
   pathname: string;
   isAuthenticated: boolean;
+  avatarUrl?: string | null;
+  displayName?: string | null;
 }) => {
   const [isOpen, setIsOpen] = useState(false);
 
@@ -46,6 +50,16 @@ export const AppHeader = ({
       document.body.style.overflow = "";
     };
   }, [isOpen]);
+
+  const userMenuProps = {
+    isAuthenticated,
+    avatarUrl,
+    displayName,
+    loginLabel: dictionary.auth.google,
+    profileLabel: dictionary.profile.viewProfile,
+    signOutLabel: dictionary.profile.signOut,
+    profileHref: withLang("/profile", locale),
+  };
 
   return (
     <header className="topbar">
@@ -77,11 +91,7 @@ export const AppHeader = ({
         <div className="topbar-controls desktop-only">
           <ThemeToggle />
           <LocaleLinks pathname={pathname} locale={locale} />
-          <AuthControls
-            isAuthenticated={isAuthenticated}
-            loginLabel={dictionary.auth.google}
-            logoutLabel={dictionary.auth.logout}
-          />
+          <UserMenu {...userMenuProps} />
         </div>
 
         {/* Burger Button (Mobile) */}
@@ -92,11 +102,11 @@ export const AppHeader = ({
           aria-expanded={isOpen}
         >
           {isOpen ? (
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <svg suppressHydrationWarning viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M18 6L6 18M6 6l12 12" />
             </svg>
           ) : (
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <svg suppressHydrationWarning viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M3 12h18M3 6h18M3 18h18" />
             </svg>
           )}
@@ -128,13 +138,10 @@ export const AppHeader = ({
             <ThemeToggle />
             <LocaleLinks pathname={pathname} locale={locale} />
           </div>
-          <AuthControls
-            isAuthenticated={isAuthenticated}
-            loginLabel={dictionary.auth.google}
-            logoutLabel={dictionary.auth.logout}
-          />
+          <UserMenu {...userMenuProps} />
         </div>
       </div>
     </header>
   );
 };
+

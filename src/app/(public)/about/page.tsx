@@ -15,6 +15,8 @@ export default async function AboutPage({
       dictionary={context.dictionary}
       pathname={context.pathname}
       isAuthenticated={Boolean(context.userId)}
+      avatarUrl={context.avatarUrl}
+      displayName={context.displayName}
     >
       <h1 className="page-title">{context.dictionary.about.title}</h1>
       <div className="grid">

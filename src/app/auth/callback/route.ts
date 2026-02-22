@@ -12,7 +12,17 @@ export async function GET(request: Request) {
   const url = new URL(request.url);
   const code = url.searchParams.get("code");
   const next = safeNextPath(url.searchParams.get("next"));
-  const origin = `${url.protocol}//${url.host}`;
+
+  // Use headers to get the actual host the user visited,
+  // falling back to url.host if headers aren't available.
+  const forwardedHost = request.headers.get("x-forwarded-host");
+  const host = request.headers.get("host");
+  const actualHost = forwardedHost || host || url.host;
+
+  // Determine protocol based on localhost vs prod
+  const protocol = actualHost.includes("localhost") ? "http:" : "https:";
+  const origin = `${protocol}//${actualHost}`;
+
   const fallbackRedirect = `${origin}${next}`;
 
   if (!code) {

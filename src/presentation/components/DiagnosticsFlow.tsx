@@ -4,6 +4,7 @@ import { useCallback, useMemo, useRef, useState } from "react";
 import type { Locale, AnswerValue, PsychoAnswers, PsychoScore } from "@/domain/psychosomatic/model";
 import { psychosomaticQuestions, getQuestionOptions, levelLabels, zoneLabels } from "@/domain/psychosomatic/questions";
 import { scorePsychosomatic } from "@/domain/psychosomatic/scoring";
+import { getSupabaseBrowserClient } from "@/infrastructure/supabase/client";
 
 type Props = {
   isAuthenticated: boolean;
@@ -44,6 +45,15 @@ export const DiagnosticsFlow = ({ isAuthenticated, locale, labels, productsHref,
   const [sessionId, setSessionId] = useState(() => crypto.randomUUID());
   const [result, setResult] = useState<PsychoScore | null>(null);
   const [busy, setBusy] = useState(false);
+
+  const signIn = async () => {
+    setBusy(true);
+    const supabase = getSupabaseBrowserClient();
+    const nextPath = `${window.location.pathname}${window.location.search}`;
+    const redirectTo = `${window.location.origin}/auth/callback?next=${encodeURIComponent(nextPath)}`;
+    await supabase.auth.signInWithOAuth({ provider: "google", options: { redirectTo } });
+    setBusy(false);
+  };
   const questionRefs = useRef<Map<number, HTMLElement>>(new Map());
 
   const answeredCount = useMemo(
@@ -164,10 +174,10 @@ export const DiagnosticsFlow = ({ isAuthenticated, locale, labels, productsHref,
           <h3>{labels.recommendationsLabel}</h3>
           {result.recommendations.map((block, idx) => (
             <div key={idx}>
-              <strong>{block.title}</strong>
+              <strong>{block.title[locale]}</strong>
               <ul>
-                {block.items.map((item) => (
-                  <li key={item}>{item}</li>
+                {block.items.map((item, itemIdx) => (
+                  <li key={itemIdx}>{item[locale]}</li>
                 ))}
               </ul>
             </div>
@@ -176,7 +186,15 @@ export const DiagnosticsFlow = ({ isAuthenticated, locale, labels, productsHref,
 
         {!isAuthenticated ? (
           <div className="card" style={{ padding: 16, marginTop: 16, border: '1px solid var(--color-accent-dim)' }}>
-            <p style={{ margin: 0, color: 'var(--color-text)' }}>{labels.guestModeNotice}</p>
+            <p style={{ margin: 0, color: 'var(--color-text)', marginBottom: 16 }}>{labels.guestModeNotice}</p>
+            <button
+              type="button"
+              className="button button-accent"
+              onClick={signIn}
+              disabled={busy}
+            >
+              {locale === "ru" ? "Войти через Google" : "Sign in with Google"}
+            </button>
           </div>
         ) : null}
 

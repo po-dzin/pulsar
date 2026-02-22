@@ -1,12 +1,7 @@
 import { getViewContext } from "@/presentation/i18n/getViewContext";
-import { PageScaffold } from "@/presentation/components/PageScaffold";
 import { createRuntime } from "@/infrastructure/repositories/factory/createRuntime";
 import { requireAdminRole } from "@/infrastructure/supabase/authz";
-import { AdminUsersPanel } from "@/presentation/components/AdminUsersPanel";
-import { AdminProgressPanel } from "@/presentation/components/AdminProgressPanel";
-import { AdminLeadsPanel } from "@/presentation/components/AdminLeadsPanel";
-import { AdminContentPanel } from "@/presentation/components/AdminContentPanel";
-import { AdminRolesPanel } from "@/presentation/components/AdminRolesPanel";
+import { AdminDashboard } from "@/presentation/components/AdminDashboard";
 
 export const dynamic = "force-dynamic";
 
@@ -30,26 +25,15 @@ export default async function AdminPage({
   }
 
   return (
-    <PageScaffold
-      locale={context.locale}
-      dictionary={context.dictionary}
-      pathname={context.pathname}
-      isAuthenticated={Boolean(context.userId)}
-    >
-      <h1 className="page-title">Admin</h1>
+    <div className="admin-page-inner">
+      <h1 className="page-title" style={{ fontSize: "clamp(1.6rem, 3vw, 2.8rem)" }}>Admin</h1>
       {!allowed ? (
-        <section className="card">
-          <p className="muted">Admin role is required.</p>
+        <section className="card" style={{ marginTop: "var(--space-4)" }}>
+          <p className="muted">Admin role is required to access this panel.</p>
         </section>
       ) : (
-        <div className="grid cols-2">
-          <AdminRolesPanel />
-          <AdminUsersPanel />
-          <AdminProgressPanel />
-          <AdminLeadsPanel />
-          <AdminContentPanel />
-        </div>
+        <AdminDashboard />
       )}
-    </PageScaffold>
+    </div>
   );
 }

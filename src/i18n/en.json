@@ -84,7 +84,18 @@
     "strong": "Strong zones",
     "growth": "Growth zones",
     "recommendations": "Recommendations",
-    "toProducts": "Go to products",
+    "toProducts": "Get consultation",
     "toKnowledge": "Open knowledge base"
+  },
+  "profile": {
+    "title": "My Profile",
+    "history": "Test History",
+    "noHistory": "You haven't taken any tests yet.",
+    "download": "Download PDF",
+    "score": "Score",
+    "level": "Level",
+    "date": "Date",
+    "viewProfile": "Profile",
+    "signOut": "Sign out"
   }
 }

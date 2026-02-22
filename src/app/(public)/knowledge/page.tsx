@@ -19,6 +19,8 @@ export default async function KnowledgePage({
       dictionary={context.dictionary}
       pathname={context.pathname}
       isAuthenticated={Boolean(context.userId)}
+      avatarUrl={context.avatarUrl}
+      displayName={context.displayName}
     >
       <h1 className="page-title">{context.dictionary.knowledge.title}</h1>
       <p className="page-subtitle">{context.dictionary.knowledge.subtitle}</p>

@@ -9,17 +9,28 @@ export const PageScaffold = ({
   dictionary,
   pathname,
   isAuthenticated,
+  avatarUrl,
+  displayName,
   children,
 }: {
   locale: Locale;
   dictionary: Dictionary;
   pathname: string;
   isAuthenticated: boolean;
+  avatarUrl?: string | null;
+  displayName?: string | null;
   children: ReactNode;
 }) => {
   return (
     <div className="app-shell">
-      <AppHeader locale={locale} dictionary={dictionary} pathname={pathname} isAuthenticated={isAuthenticated} />
+      <AppHeader
+        locale={locale}
+        dictionary={dictionary}
+        pathname={pathname}
+        isAuthenticated={isAuthenticated}
+        avatarUrl={avatarUrl}
+        displayName={displayName}
+      />
       <main className={`main ${pathname === "/" ? "main-landing" : ""}`}>{children}</main>
       <Footer dictionary={dictionary} />
     </div>

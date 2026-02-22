@@ -18,6 +18,8 @@ export default async function MissionPage({
       dictionary={d}
       pathname={context.pathname}
       isAuthenticated={Boolean(context.userId)}
+      avatarUrl={context.avatarUrl}
+      displayName={context.displayName}
     >
       {/* ── HERO ── full-viewport opening screen */}
       <section className="landing-section landing-hero">

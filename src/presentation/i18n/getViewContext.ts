@@ -17,10 +17,14 @@ export const getViewContext = async (
   dictionary: ReturnType<typeof getDictionary>;
   pathname: string;
   userId: string | null;
+  avatarUrl: string | null;
+  displayName: string | null;
 }> => {
   const browserLocale = await browserLocaleFallback();
   let locale = resolveLocale(langParam ?? browserLocale);
   let userId: string | null = null;
+  let avatarUrl: string | null = null;
+  let displayName: string | null = null;
 
   try {
     const supabase = await getSupabaseServerClient();
@@ -29,6 +33,8 @@ export const getViewContext = async (
 
     if (user) {
       userId = user.id;
+      avatarUrl = user.user_metadata?.avatar_url ?? null;
+      displayName = user.user_metadata?.full_name ?? user.user_metadata?.name ?? user.email ?? null;
 
       const { data: profile } = await supabase.from("profiles").select("locale").eq("id", user.id).maybeSingle();
       const profileLocale = resolveLocale(profile?.locale ?? browserLocale);
@@ -58,5 +64,7 @@ export const getViewContext = async (
     dictionary: getDictionary(locale),
     pathname,
     userId,
+    avatarUrl,
+    displayName,
   };
 };

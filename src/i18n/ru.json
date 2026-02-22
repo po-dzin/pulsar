@@ -84,7 +84,18 @@
     "strong": "Сильные зоны",
     "growth": "Зоны роста",
     "recommendations": "Рекомендации",
-    "toProducts": "Перейти к продуктам",
+    "toProducts": "Получить консультацию",
     "toKnowledge": "Открыть базу знаний"
+  },
+  "profile": {
+    "title": "Мой профиль",
+    "history": "История тестов",
+    "noHistory": "Вы ещё не проходили тесты.",
+    "download": "Скачать PDF",
+    "score": "Результат",
+    "level": "Уровень",
+    "date": "Дата",
+    "viewProfile": "Профиль",
+    "signOut": "Выйти"
   }
 }
