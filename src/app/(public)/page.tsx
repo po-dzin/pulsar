@@ -29,7 +29,7 @@ export default async function MissionPage({
           <div className="landing-section-inner">
             <p className="landing-eyebrow">{d.home.eyebrow}</p>
             <h1 className="landing-headline">{d.home.title}</h1>
-            <p className="landing-sub">{d.home.subtitle}</p>
+            <p className="landing-sub landing-sub-hero">{d.home.subtitle}</p>
             <div className="landing-cta-row">
               <Link href={withLang("/diagnostics", locale)} className="button button-primary button-lg">
                 {d.home.heroCta}
@@ -89,9 +89,6 @@ export default async function MissionPage({
             <div className="landing-cta-row">
               <Link href={withLang("/about", locale)} className="button button-primary button-lg">
                 {d.nav.about}
-              </Link>
-              <Link href={withLang("/diagnostics", locale)} className="button button-muted button-lg">
-                {d.common.primaryCta}
               </Link>
             </div>
           </div>
