@@ -369,7 +369,8 @@ export const DiagnosticsFlow = ({ isAuthenticated, locale, labels, productsHref,
         </div>
 
         <section className="card">
-          <p className="muted" style={{ whiteSpace: "pre-line" }}>{labels.description}</p>
+          <h2>{labels.testSelectorPsychosomatic}</h2>
+          <p style={{ whiteSpace: "pre-line" }}>{labels.description}</p>
 
           <label className="consent-row" data-selected={consent}>
             <input

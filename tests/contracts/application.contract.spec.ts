@@ -82,6 +82,10 @@ class InMemoryLeadsRepository implements LeadsRepositoryPort {
     return this.leads;
   }
 
+  async countLeads(): Promise<number> {
+    return this.leads.length;
+  }
+
   async updateLeadStatus(id: string, status: LeadStatus): Promise<void> {
     const current = this.leads.find((lead) => lead.id === id);
     if (!current) {

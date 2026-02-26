@@ -411,8 +411,8 @@ export const PhysicalDiagnosticsFlow = ({ isAuthenticated, locale }: Props) => {
   if (!started) {
     return (
       <section className="card" data-testid="physical-full-intro">
-        <h2>{locale === "ru" ? "Физический тест v1 (полный)" : "Physical test v1 (full)"}</h2>
-        <p className="muted">
+        <h2>{locale === "ru" ? "Физический тест" : "Physical test"}</h2>
+        <p>
           {locale === "ru"
             ? "Единый тест из 10 протоколов по 5 категориям. На выходе: оценка каждой категории, общий результат и персональные рекомендации."
             : "Single full test with 10 protocols across 5 categories. Output includes category scores, overall score, and recommendations."}
@@ -452,7 +452,7 @@ export const PhysicalDiagnosticsFlow = ({ isAuthenticated, locale }: Props) => {
             disabled={!consent}
             data-testid="physical-start-button"
           >
-            {locale === "ru" ? "Начать полный тест" : "Start full test"}
+            {locale === "ru" ? "Начать тест" : "Start test"}
           </button>
         </div>
       </section>

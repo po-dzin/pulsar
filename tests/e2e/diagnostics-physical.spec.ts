@@ -61,6 +61,6 @@ test.describe("Physical diagnostics flow", () => {
     await page.getByTestId("flow-tab-physical").click();
 
     await expect(page.getByTestId("physical-full-intro")).toContainText("Single full test with 10 protocols across 5 categories");
-    await expect(page.getByTestId("physical-start-button")).toContainText("Start full test");
+    await expect(page.getByTestId("physical-start-button")).toContainText("Start test");
   });
 });
