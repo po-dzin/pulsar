@@ -5,30 +5,36 @@ import { requireAdminRole, requireAuthenticatedUser } from "@/infrastructure/sup
 
 const forbidden = () => NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
-export async function GET() {
+const parseNumber = (raw: string | null, fallback: number): number => {
+  if (!raw) return fallback;
+  const value = Number(raw);
+  if (!Number.isFinite(value)) return fallback;
+  return value;
+};
+
+export async function GET(request: Request) {
   try {
     const runtime = await createRuntime();
     const user = await requireAuthenticatedUser(runtime.supabase);
     await requireAdminRole(runtime.supabase, user.id);
 
-    const [roles, profiles] = await Promise.all([
-      runtime.adminRolesRepo.listRoles(),
-      runtime.profilesRepo.listProfiles(),
-    ]);
+    const { searchParams } = new URL(request.url);
+    const sortByRaw = searchParams.get("sortBy");
+    const sortBy =
+      sortByRaw === "fullName" || sortByRaw === "email" || sortByRaw === "role" || sortByRaw === "assignedAt" || sortByRaw === "createdAt"
+        ? sortByRaw
+        : undefined;
+    const sortDirRaw = searchParams.get("sortDir");
+    const sortDir = sortDirRaw === "asc" || sortDirRaw === "desc" ? sortDirRaw : undefined;
 
-    const profileMap = new Map(profiles.map((profile) => [profile.id, profile]));
-    const items = roles.map((role) => {
-      const profile = profileMap.get(role.userId);
-      return {
-        userId: role.userId,
-        role: role.role,
-        createdAt: role.createdAt,
-        email: profile?.email ?? null,
-        fullName: profile?.fullName ?? null,
-      };
+    const data = await runtime.adminReadRepo.listRoles({
+      page: parseNumber(searchParams.get("page"), 1),
+      pageSize: parseNumber(searchParams.get("pageSize"), 20),
+      search: searchParams.get("search") ?? undefined,
+      sortBy,
+      sortDir,
     });
-
-    return NextResponse.json({ ok: true, roles: items });
+    return NextResponse.json({ ok: true, rows: data.rows, meta: data.meta, roles: data.rows });
   } catch {
     return forbidden();
   }

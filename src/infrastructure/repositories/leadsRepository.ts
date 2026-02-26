@@ -1,4 +1,6 @@
 import type {
+  AdminLeadSortBy,
+  AdminSortDir,
   ConsultationLeadInput,
   ConsultationLeadRow,
   LeadStatus,
@@ -51,13 +53,70 @@ export class SupabaseLeadsRepository implements LeadsRepositoryPort {
     return mapLead(data);
   }
 
-  async listLeads(): Promise<ConsultationLeadRow[]> {
-    const { data, error } = await this.supabase.from("consultation_leads").select("*").order("created_at", { ascending: false });
+  async listLeads(options?: {
+    search?: string;
+    status?: LeadStatus;
+    sortBy?: AdminLeadSortBy;
+    sortDir?: AdminSortDir;
+    offset?: number;
+    limit?: number;
+  }): Promise<ConsultationLeadRow[]> {
+    const sortBy = options?.sortBy ?? "createdAt";
+    const sortDir = options?.sortDir ?? "desc";
+    const dbSortColumn =
+      sortBy === "updatedAt"
+        ? "updated_at"
+        : sortBy === "name"
+          ? "name"
+          : sortBy === "status"
+            ? "status"
+            : "created_at";
+
+    let query = this.supabase
+      .from("consultation_leads")
+      .select("*")
+      .order(dbSortColumn, { ascending: sortDir === "asc" });
+
+    if (options?.status) {
+      query = query.eq("status", options.status);
+    }
+
+    if (options?.search?.trim()) {
+      const escaped = options.search.trim().replace(/[%_]/g, "");
+      query = query.or(`name.ilike.%${escaped}%,contact.ilike.%${escaped}%,message.ilike.%${escaped}%`);
+    }
+
+    if (typeof options?.offset === "number" && typeof options?.limit === "number") {
+      query = query.range(options.offset, options.offset + options.limit - 1);
+    }
+
+    const { data, error } = await query;
     if (error) {
       throw error;
     }
 
     return ((data ?? []) as ConsultationLeadDbRow[]).map(mapLead);
+  }
+
+  async countLeads(options?: { search?: string; status?: LeadStatus }): Promise<number> {
+    let query = this.supabase
+      .from("consultation_leads")
+      .select("id", { count: "exact", head: true });
+
+    if (options?.status) {
+      query = query.eq("status", options.status);
+    }
+
+    if (options?.search?.trim()) {
+      const escaped = options.search.trim().replace(/[%_]/g, "");
+      query = query.or(`name.ilike.%${escaped}%,contact.ilike.%${escaped}%,message.ilike.%${escaped}%`);
+    }
+
+    const { count, error } = await query;
+    if (error) {
+      throw error;
+    }
+    return count ?? 0;
   }
 
   async updateLeadStatus(id: string, status: LeadStatus): Promise<void> {

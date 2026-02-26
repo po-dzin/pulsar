@@ -46,9 +46,8 @@ test.describe("Public smoke", () => {
     expect(focusedTag).not.toBe("BODY");
   });
 
-  test("products guest state explains next step", async ({ page }) => {
+  test("products guest state has sign-in CTA", async ({ page }) => {
     await page.goto("/products?lang=en");
-    await expect(page.getByText(/sign in to submit a consultation request/i)).toBeVisible();
     await expect(page.getByTestId("products-signin-button")).toBeVisible();
   });
 });

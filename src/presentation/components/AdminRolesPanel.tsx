@@ -1,169 +1,268 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { ConfirmDialog } from "@/presentation/components/ConfirmDialog";
+import { AdminMobileCard } from "@/presentation/components/admin/AdminMobileCard";
+import { AdminStatusBadge } from "@/presentation/components/admin/AdminStatusBadge";
+import { AdminTable } from "@/presentation/components/admin/AdminTable";
+import { AdminTableToolbar } from "@/presentation/components/admin/AdminTableToolbar";
 
-type User = {
-  id: string;
-  email: string;
-  fullName: string | null;
-};
-
-type RoleItem = {
+type RoleRow = {
   userId: string;
-  role: "admin";
-  email: string | null;
   fullName: string | null;
+  email: string;
+  role: "admin" | "user";
+  assignedAt: string | null;
   createdAt: string;
 };
 
-type ConfirmState = {
-  userId: string;
-  role: "admin";
-  label: string;
-} | null;
+type RolesResponse = {
+  rows: RoleRow[];
+  meta: {
+    page: number;
+    pageSize: number;
+    total: number;
+    totalPages: number;
+  };
+};
+
+const formatDate = (value: string | null) => (value ? new Date(value).toLocaleString() : "—");
 
 export const AdminRolesPanel = () => {
-  const [users, setUsers] = useState<User[]>([]);
-  const [roles, setRoles] = useState<RoleItem[]>([]);
-  const [selectedUserId, setSelectedUserId] = useState("");
-  const [busy, setBusy] = useState(false);
+  const [data, setData] = useState<RolesResponse>({
+    rows: [],
+    meta: { page: 1, pageSize: 20, total: 0, totalPages: 1 },
+  });
+  const [searchInput, setSearchInput] = useState("");
+  const [search, setSearch] = useState("");
+  const [sortBy, setSortBy] = useState<"createdAt" | "email" | "fullName" | "role" | "assignedAt">("createdAt");
+  const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
+  const [page, setPage] = useState(1);
+  const [loading, setLoading] = useState(false);
   const [status, setStatus] = useState<string | null>(null);
-  const [confirmState, setConfirmState] = useState<ConfirmState>(null);
+  const [grantEmail, setGrantEmail] = useState("");
+  const [confirmUser, setConfirmUser] = useState<RoleRow | null>(null);
 
-  const selectedUser = useMemo(() => users.find((user) => user.id === selectedUserId) ?? null, [users, selectedUserId]);
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      setSearch(searchInput.trim());
+      setPage(1);
+    }, 260);
+
+    return () => window.clearTimeout(timer);
+  }, [searchInput]);
 
   const load = async () => {
-    const [usersResponse, rolesResponse] = await Promise.all([fetch("/api/admin/users"), fetch("/api/admin/roles")]);
-    const usersData = await usersResponse.json();
-    const rolesData = await rolesResponse.json();
+    setLoading(true);
+    const params = new URLSearchParams({
+      page: String(page),
+      pageSize: "20",
+      sortBy,
+      sortDir,
+    });
+    if (search) params.set("search", search);
 
-    setUsers(usersData.users ?? []);
-    setRoles(rolesData.roles ?? []);
+    const response = await fetch(`/api/admin/roles?${params.toString()}`).then((res) => res.json());
+    setData({
+      rows: response.rows ?? [],
+      meta: response.meta ?? { page: 1, pageSize: 20, total: 0, totalPages: 1 },
+    });
+    setLoading(false);
   };
 
   useEffect(() => {
-    load().catch(() => setStatus("Failed to load roles"));
-  }, []);
+    void load();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [page, search, sortBy, sortDir]);
 
-  const assignRole = async () => {
-    if (!selectedUser) {
-      setStatus("Select a user");
+  const grantAdmin = async () => {
+    if (!grantEmail.trim()) {
+      setStatus("Provide email to grant admin role.");
       return;
     }
 
-    setBusy(true);
+    setLoading(true);
     setStatus(null);
     const response = await fetch("/api/admin/roles", {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ userId: selectedUser.id, role: "admin" }),
+      body: JSON.stringify({ role: "admin", email: grantEmail.trim() }),
     });
-    setBusy(false);
+    setLoading(false);
 
     if (!response.ok) {
-      const data = await response.json().catch(() => ({}));
-      setStatus(data.error ?? "Failed to assign role");
+      const body = await response.json().catch(() => ({}));
+      setStatus(body.error ?? "Failed to grant role.");
       return;
     }
 
+    setStatus("Role assigned.");
+    setGrantEmail("");
     await load();
-    setStatus("Role assigned");
   };
 
-  const confirmRevoke = (userId: string, targetRole: "admin", label: string) => {
-    setConfirmState({ userId, role: targetRole, label });
-  };
-
-  const revokeRole = async (userId: string, targetRole: "admin") => {
-    setBusy(true);
+  const revokeAdmin = async (row: RoleRow) => {
+    setLoading(true);
     setStatus(null);
     const response = await fetch("/api/admin/roles", {
       method: "DELETE",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ userId, role: targetRole }),
+      body: JSON.stringify({ userId: row.userId, role: "admin" }),
     });
-    setBusy(false);
+    setLoading(false);
 
     if (!response.ok) {
-      setStatus("Failed to revoke role");
+      const body = await response.json().catch(() => ({}));
+      setStatus(body.error ?? "Failed to revoke role.");
       return;
     }
 
+    setStatus("Role revoked.");
     await load();
-    setStatus("Role revoked");
   };
 
   return (
     <>
-      {confirmState && (
+      {confirmUser ? (
         <ConfirmDialog
-          title="Revoke role?"
-          body={`Remove the "${confirmState.role}" role from ${confirmState.label}? This action cannot be undone.`}
+          title="Revoke admin role?"
+          body={`Remove admin access for ${confirmUser.fullName ?? confirmUser.email}?`}
           confirmLabel="Yes, revoke"
           cancelLabel="Cancel"
           onConfirm={async () => {
-            setConfirmState(null);
-            await revokeRole(confirmState.userId, confirmState.role);
+            const target = confirmUser;
+            setConfirmUser(null);
+            await revokeAdmin(target);
           }}
-          onCancel={() => setConfirmState(null)}
+          onCancel={() => setConfirmUser(null)}
         />
-      )}
+      ) : null}
 
       <section className="card" data-testid="admin-roles-panel">
         <h3>Roles</h3>
 
-        <div className="list">
-          <label className="field">
-            <span>User</span>
-            <select
-              className="select"
-              value={selectedUserId}
-              onChange={(event) => setSelectedUserId(event.target.value)}
-              disabled={busy}
-            >
-              <option value="">Select user</option>
-              {users.map((user) => (
-                <option key={user.id} value={user.id}>
-                  {user.fullName ? `${user.fullName} (${user.email})` : user.email}
-                </option>
-              ))}
-            </select>
-          </label>
-
-          <button type="button" className="button button-primary" onClick={assignRole} disabled={busy} data-testid="assign-role-button">
+        <div className="admin-compact-form">
+          <input
+            className="input"
+            value={grantEmail}
+            onChange={(event) => setGrantEmail(event.target.value)}
+            placeholder="User email"
+            data-testid="admin-role-grant-email"
+          />
+          <button type="button" className="button button-primary" onClick={() => void grantAdmin()} disabled={loading} data-testid="assign-role-button">
             Grant admin
           </button>
-
-          {status ? <p className="muted">{status}</p> : null}
         </div>
 
-        <div className="list" style={{ marginTop: 14 }}>
-          {roles.map((item, index) => (
-            <div className="answer-option" key={`${item.userId}-${item.role}`}>
-              <div>
-                <strong>{item.fullName ?? item.email ?? item.userId}</strong>
-                <p className="muted">{item.email ?? item.userId}</p>
-                <p className="muted">{item.role}</p>
-              </div>
-              <button
-                type="button"
-                className="button button-danger"
-                onClick={() =>
-                  confirmRevoke(
-                    item.userId,
-                    item.role,
-                    item.fullName ?? item.email ?? item.userId
-                  )
-                }
-                disabled={busy}
-                data-testid={`revoke-role-button-${index}`}
-              >
-                Revoke
-              </button>
+        {status ? <p className="muted">{status}</p> : null}
+
+        <AdminTableToolbar
+          searchValue={searchInput}
+          onSearchChange={setSearchInput}
+          searchPlaceholder="Search by name or email"
+          rightSlot={
+            <div className="admin-toolbar-controls">
+              <select className="select" value={sortBy} onChange={(event) => setSortBy(event.target.value as typeof sortBy)}>
+                <option value="createdAt">Created at</option>
+                <option value="fullName">Name</option>
+                <option value="email">Email</option>
+                <option value="role">Role</option>
+                <option value="assignedAt">Assigned at</option>
+              </select>
+              <select className="select" value={sortDir} onChange={(event) => setSortDir(event.target.value as typeof sortDir)}>
+                <option value="desc">Desc</option>
+                <option value="asc">Asc</option>
+              </select>
             </div>
-          ))}
-          {roles.length === 0 ? <p className="muted">No admin roles assigned.</p> : null}
+          }
+        />
+
+        <div className="admin-desktop-only">
+          <AdminTable
+            columns={[
+              { key: "name", label: "Name" },
+              { key: "email", label: "Email" },
+              { key: "role", label: "Role" },
+              { key: "revoke", label: "Revoke", className: "admin-col-actions" },
+            ]}
+            hasRows={data.rows.length > 0}
+            emptyMessage={loading ? "Loading..." : "No users found."}
+          >
+            {data.rows.map((item, index) => (
+              <tr key={item.userId} data-testid={`admin-role-row-${index}`}>
+                <td>{item.fullName ?? "User"}</td>
+                <td>{item.email}</td>
+                <td>
+                  <AdminStatusBadge label={item.role} tone={item.role === "admin" ? "warning" : "neutral"} />
+                  <span className="muted admin-inline-note">{formatDate(item.assignedAt)}</span>
+                </td>
+                <td>
+                  {item.role === "admin" ? (
+                    <button
+                      type="button"
+                      className="button button-danger"
+                      onClick={() => setConfirmUser(item)}
+                      disabled={loading}
+                      data-testid={`revoke-role-button-${index}`}
+                    >
+                      Revoke
+                    </button>
+                  ) : (
+                    <span className="muted">—</span>
+                  )}
+                </td>
+              </tr>
+            ))}
+          </AdminTable>
+        </div>
+
+        <div className="admin-mobile-only">
+          <div className="admin-mobile-list">
+            {data.rows.map((item, index) => (
+              <AdminMobileCard
+                key={item.userId}
+                title={item.fullName ?? "User"}
+                subtitle={item.email}
+                expanded={false}
+                onToggle={() => {}}
+                showToggle={false}
+                actions={
+                  <div className="admin-mobile-inline">
+                    <AdminStatusBadge label={item.role} tone={item.role === "admin" ? "warning" : "neutral"} />
+                    {item.role === "admin" ? (
+                      <button
+                        type="button"
+                        className="button button-danger"
+                        onClick={() => setConfirmUser(item)}
+                        disabled={loading}
+                        data-testid={`revoke-role-mobile-${index}`}
+                      >
+                        Revoke
+                      </button>
+                    ) : null}
+                  </div>
+                }
+              >
+                <p className="muted">Assigned: {formatDate(item.assignedAt)}</p>
+              </AdminMobileCard>
+            ))}
+            {!data.rows.length ? <p className="muted">{loading ? "Loading..." : "No users found."}</p> : null}
+          </div>
+        </div>
+
+        <div className="admin-pagination">
+          <button type="button" className="button button-muted" onClick={() => setPage((value) => Math.max(1, value - 1))} disabled={data.meta.page <= 1 || loading}>
+            Previous
+          </button>
+          <span className="muted">Page {data.meta.page} / {data.meta.totalPages}</span>
+          <button
+            type="button"
+            className="button button-muted"
+            onClick={() => setPage((value) => Math.min(data.meta.totalPages, value + 1))}
+            disabled={data.meta.page >= data.meta.totalPages || loading}
+          >
+            Next
+          </button>
         </div>
       </section>
     </>

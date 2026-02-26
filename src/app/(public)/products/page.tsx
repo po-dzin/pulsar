@@ -37,9 +37,6 @@ export default async function ProductsPage({
         labels={{
           requestButton: context.dictionary.products.consultSubmit,
           signInButton: context.dictionary.auth.google,
-          signInHint: Boolean(context.userId)
-            ? (context.locale === "ru" ? "Отправь заявку через форму в модальном окне." : "Submit your request through the modal form.")
-            : context.dictionary.products.consultAuthRequired,
           modalTitle: context.dictionary.products.consultTitle,
           name: context.dictionary.products.consultName,
           contact: context.dictionary.products.consultContact,

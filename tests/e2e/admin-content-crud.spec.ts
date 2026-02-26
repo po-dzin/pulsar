@@ -5,7 +5,7 @@ const hasPreAuth = process.env.E2E_AUTHENTICATED === "1" && Boolean(process.env.
 test.describe("Admin KB content CRUD", () => {
   test.skip(!hasPreAuth, "Requires authenticated admin session in test environment.");
 
-  test("admin creates, previews, publishes and archives KB article", async ({ page }) => {
+  test("admin creates, previews, publishes and deletes KB article", async ({ page }) => {
     const stamp = Date.now();
     const categorySlug = `e2e-kb-cat-${stamp}`;
     const articleSlug = `e2e-kb-article-${stamp}`;
@@ -23,7 +23,7 @@ test.describe("Admin KB content CRUD", () => {
     await page.getByTestId("admin-kb-category-title-en-input").fill(categoryTitleEn);
     await page.getByTestId("admin-kb-category-sort-input").fill("900");
     await page.getByTestId("admin-kb-category-save-button").click();
-    await expect(page.getByTestId("admin-kb-status")).toContainText("Category saved");
+    await expect(page.getByTestId("admin-kb-status")).toContainText("Category created");
 
     await page.getByTestId("admin-kb-tab-articles").click();
     await page.getByTestId("admin-kb-new-article-button").click();
@@ -32,13 +32,14 @@ test.describe("Admin KB content CRUD", () => {
     await page.getByTestId("admin-kb-article-category-select").selectOption({ label: `${categoryTitleRu} / ${categoryTitleEn}` });
     await page.getByTestId("admin-kb-article-slug-input").fill(articleSlug);
     await page.getByTestId("admin-kb-article-title-ru-input").fill(articleTitleRu);
-    await page.getByTestId("admin-kb-article-title-en-input").fill(articleTitleEn);
     await page.getByTestId("admin-kb-article-excerpt-ru-input").fill("Краткое описание E2E.");
-    await page.getByTestId("admin-kb-article-excerpt-en-input").fill("Short E2E excerpt.");
     await page.getByTestId("admin-kb-article-content-ru-input").fill(`# ${articleTitleRu}\n\nТестовый RU контент.`);
+
+    await page.getByTestId("admin-kb-editor-locale-en").click();
+    await page.getByTestId("admin-kb-article-title-en-input").fill(articleTitleEn);
+    await page.getByTestId("admin-kb-article-excerpt-en-input").fill("Short E2E excerpt.");
     await page.getByTestId("admin-kb-article-content-en-input").fill(`# ${articleTitleEn}\n\nTest EN content.`);
 
-    await page.getByTestId("admin-kb-preview-locale-select").selectOption("en");
     await page.getByTestId("admin-kb-preview-render-button").click();
     await expect(page.getByTestId("admin-kb-preview-content")).toContainText("Test EN content");
 
@@ -46,11 +47,11 @@ test.describe("Admin KB content CRUD", () => {
     await page.getByTestId("admin-kb-article-save-button").click();
     await expect(page.getByTestId("admin-kb-status")).toContainText("Article created");
 
-    const row = page.locator("[data-testid^='admin-kb-article-row-']").filter({ hasText: articleTitleRu }).first();
+    const row = page.locator("[data-testid^='admin-kb-article-row-']").filter({ hasText: articleTitleEn }).first();
     await expect(row).toBeVisible();
-    await expect(row.getByRole("button", { name: "Published" })).toBeVisible();
     await row.getByRole("button", { name: "Edit" }).click();
 
+    await page.getByTestId("admin-kb-editor-locale-en").click();
     await page.getByTestId("admin-kb-article-content-en-input").fill(`# ${articleTitleEn}\n\nUpdated EN content.`);
     await page.getByTestId("admin-kb-article-save-button").click();
     await expect(page.getByTestId("admin-kb-status")).toContainText("Article updated");
@@ -61,10 +62,10 @@ test.describe("Admin KB content CRUD", () => {
     await expect(page.getByTestId("knowledge-article-content")).toContainText("Updated EN content");
 
     await page.goto("/admin/content?lang=en");
-    const archivedRow = page.locator("[data-testid^='admin-kb-article-row-']").filter({ hasText: articleTitleRu }).first();
-    await archivedRow.getByRole("button", { name: "Archive" }).click();
+    const deletedRow = page.locator("[data-testid^='admin-kb-article-row-']").filter({ hasText: articleTitleEn }).first();
+    await deletedRow.getByRole("button", { name: "Delete" }).click();
     await page.getByTestId("confirm-dialog-confirm").click();
-    await expect(page.getByTestId("admin-kb-status")).toContainText("Article archived");
+    await expect(page.getByTestId("admin-kb-status")).toContainText("Article deleted");
 
     await page.goto("/knowledge?lang=en");
     await expect(page.getByTestId(`knowledge-card-${articleSlug}`)).toHaveCount(0);

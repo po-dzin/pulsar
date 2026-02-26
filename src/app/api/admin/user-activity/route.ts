@@ -16,29 +16,27 @@ export async function GET(request: Request) {
     await requireAdminRole(runtime.supabase, user.id);
 
     const { searchParams } = new URL(request.url);
+
+    const page = parseNumber(searchParams.get("page"), 1);
+    const pageSize = parseNumber(searchParams.get("pageSize"), 20);
+    const search = searchParams.get("search") ?? undefined;
     const sortByRaw = searchParams.get("sortBy");
+    const sortDirRaw = searchParams.get("sortDir");
     const sortBy =
-      sortByRaw === "createdAt" || sortByRaw === "updatedAt" || sortByRaw === "name" || sortByRaw === "status"
+      sortByRaw === "lastActivityAt" || sortByRaw === "testsCount" || sortByRaw === "leadsCount" || sortByRaw === "createdAt"
         ? sortByRaw
         : undefined;
-    const sortDirRaw = searchParams.get("sortDir");
     const sortDir = sortDirRaw === "asc" || sortDirRaw === "desc" ? sortDirRaw : undefined;
-    const statusRaw = searchParams.get("status");
-    const status =
-      statusRaw === "new" || statusRaw === "in_progress" || statusRaw === "done" || statusRaw === "archived" || statusRaw === "all"
-        ? statusRaw
-        : undefined;
 
-    const data = await runtime.adminReadRepo.listLeads({
-      page: parseNumber(searchParams.get("page"), 1),
-      pageSize: parseNumber(searchParams.get("pageSize"), 20),
-      search: searchParams.get("search") ?? undefined,
-      status,
+    const data = await runtime.adminReadRepo.listUserActivity({
+      page,
+      pageSize,
+      search,
       sortBy,
       sortDir,
     });
 
-    return NextResponse.json({ ok: true, rows: data.rows, meta: data.meta, leads: data.rows });
+    return NextResponse.json({ ok: true, ...data });
   } catch {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }

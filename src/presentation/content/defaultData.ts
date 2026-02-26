@@ -38,7 +38,7 @@ export const localKbArticleFallback: Record<
   {
     title: Record<Locale, string>;
     excerpt: Record<Locale, string>;
-    path: Record<Locale, string>;
+    content: Record<Locale, string>;
   }
 > = {
   "balance-model": {
@@ -47,9 +47,9 @@ export const localKbArticleFallback: Record<
       ru: "Тело, Сознание, Энергия — эволюция через баланс. Три фундаментальных уровня трансформации.",
       en: "Body, Consciousness, Energy — evolution through balance. Three fundamental levels of transformation.",
     },
-    path: {
-      ru: "src/content/kb/ru/balance-model.md",
-      en: "src/content/kb/en/balance-model.md",
+    content: {
+      ru: "# Твоя модель баланса\n\nТело, Сознание, Энергия — три фундаментальных уровня устойчивой трансформации.",
+      en: "# Your Balance Model\n\nBody, Consciousness, Energy are three core layers of sustainable transformation.",
     },
   },
 };

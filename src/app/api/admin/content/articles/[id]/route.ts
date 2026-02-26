@@ -46,7 +46,11 @@ export async function DELETE(_: Request, context: { params: Promise<{ id: string
     const user = await requireAuthenticatedUser(runtime.supabase);
     await requireAdminRole(runtime.supabase, user.id);
     const { id } = await context.params;
-    await runtime.kbRepo.archiveArticle(id, user.id);
+    const existing = await runtime.kbRepo.getArticleById(id);
+    if (!existing) {
+      return NextResponse.json({ error: "Not found" }, { status: 404 });
+    }
+    await runtime.kbRepo.deleteArticle(id);
     return NextResponse.json({ ok: true });
   } catch (error) {
     return adminContentErrorResponse(error);

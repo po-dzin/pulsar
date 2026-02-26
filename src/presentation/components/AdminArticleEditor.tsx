@@ -11,7 +11,7 @@ type AdminArticleEditorProps = {
   onCancel: () => void;
 };
 
-type PreviewLocale = "ru" | "en";
+type LocaleTab = "ru" | "en";
 
 export const AdminArticleEditor = ({ mode, categories, initialArticle, onSave, onCancel }: AdminArticleEditorProps) => {
   const [data, setData] = useState({
@@ -26,7 +26,7 @@ export const AdminArticleEditor = ({ mode, categories, initialArticle, onSave, o
     isPublished: initialArticle?.isPublished ?? false,
   });
   const [busy, setBusy] = useState(false);
-  const [previewLocale, setPreviewLocale] = useState<PreviewLocale>("ru");
+  const [localeTab, setLocaleTab] = useState<LocaleTab>("ru");
   const [previewHtml, setPreviewHtml] = useState<string>("");
   const [previewBusy, setPreviewBusy] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
@@ -39,11 +39,12 @@ export const AdminArticleEditor = ({ mode, categories, initialArticle, onSave, o
     return `Editing: ${initialArticle?.slug ?? "article"}`;
   }, [mode, initialArticle?.slug]);
 
+  const activeContent = localeTab === "ru" ? data.contentRu : data.contentEn;
+
   const handlePreview = async () => {
     setPreviewBusy(true);
     setPreviewError(null);
-    const content = previewLocale === "ru" ? data.contentRu : data.contentEn;
-    if (content.trim().length < 1) {
+    if (activeContent.trim().length < 1) {
       setPreviewBusy(false);
       setPreviewError("Content is empty for selected locale.");
       return;
@@ -53,7 +54,7 @@ export const AdminArticleEditor = ({ mode, categories, initialArticle, onSave, o
       const response = await fetch("/api/admin/content/articles/preview", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ content }),
+        body: JSON.stringify({ content: activeContent }),
       });
       const result = await response.json();
       if (response.ok) {
@@ -88,8 +89,9 @@ export const AdminArticleEditor = ({ mode, categories, initialArticle, onSave, o
   return (
     <section className="card" data-testid="admin-kb-editor">
       <h3>{title}</h3>
-      <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: "24px", marginTop: "24px" }}>
-        <div style={{ display: "grid", gap: "12px", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))" }}>
+
+      <form onSubmit={handleSubmit} className="admin-editor-form">
+        <div className="admin-editor-base-grid">
           <label className="field">
             <span>Category</span>
             <select
@@ -100,9 +102,7 @@ export const AdminArticleEditor = ({ mode, categories, initialArticle, onSave, o
               data-testid="admin-kb-article-category-select"
               required
             >
-              {categories.length === 0 ? (
-                <option value="">No categories available</option>
-              ) : null}
+              {categories.length === 0 ? <option value="">No categories available</option> : null}
               {categories.map((category) => (
                 <option key={category.id} value={category.id}>
                   {category.titleRu} / {category.titleEn}
@@ -124,7 +124,7 @@ export const AdminArticleEditor = ({ mode, categories, initialArticle, onSave, o
             />
           </label>
 
-          <label className="field" style={{ alignSelf: "end" }}>
+          <label className="field">
             <span>Publish state</span>
             <select
               className="select"
@@ -139,98 +139,106 @@ export const AdminArticleEditor = ({ mode, categories, initialArticle, onSave, o
           </label>
         </div>
 
-        <div style={{ display: "grid", gap: "16px", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))" }}>
-          <label className="field">
-            <span>Title (RU)</span>
-            <input
-              type="text"
-              className="input"
-              value={data.titleRu}
-              onChange={(e) => setData((prev) => ({ ...prev, titleRu: e.target.value }))}
-              disabled={busy}
-              data-testid="admin-kb-article-title-ru-input"
-              required
-            />
-          </label>
-          <label className="field">
-            <span>Title (EN)</span>
-            <input
-              type="text"
-              className="input"
-              value={data.titleEn}
-              onChange={(e) => setData((prev) => ({ ...prev, titleEn: e.target.value }))}
-              disabled={busy}
-              data-testid="admin-kb-article-title-en-input"
-              required
-            />
-          </label>
-          <label className="field">
-            <span>Excerpt (RU)</span>
-            <textarea
-              className="textarea"
-              value={data.excerptRu}
-              onChange={(e) => setData((prev) => ({ ...prev, excerptRu: e.target.value }))}
-              style={{ minHeight: "96px" }}
-              disabled={busy}
-              data-testid="admin-kb-article-excerpt-ru-input"
-              required
-            />
-          </label>
-          <label className="field">
-            <span>Excerpt (EN)</span>
-            <textarea
-              className="textarea"
-              value={data.excerptEn}
-              onChange={(e) => setData((prev) => ({ ...prev, excerptEn: e.target.value }))}
-              style={{ minHeight: "96px" }}
-              disabled={busy}
-              data-testid="admin-kb-article-excerpt-en-input"
-              required
-            />
-          </label>
+        <div className="test-selector" style={{ marginTop: 0 }}>
+          <button
+            type="button"
+            className="test-selector-tab"
+            data-active={localeTab === "ru" || undefined}
+            onClick={() => setLocaleTab("ru")}
+            data-testid="admin-kb-editor-locale-ru"
+          >
+            RU
+          </button>
+          <button
+            type="button"
+            className="test-selector-tab"
+            data-active={localeTab === "en" || undefined}
+            onClick={() => setLocaleTab("en")}
+            data-testid="admin-kb-editor-locale-en"
+          >
+            EN
+          </button>
         </div>
 
-        <div style={{ display: "grid", gap: "16px", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))" }}>
-          <label className="field">
-            <span>Content Markdown (RU)</span>
-            <textarea
-              className="textarea"
-              value={data.contentRu}
-              onChange={(e) => setData((prev) => ({ ...prev, contentRu: e.target.value }))}
-              style={{ minHeight: "320px", fontFamily: "monospace" }}
-              disabled={busy}
-              data-testid="admin-kb-article-content-ru-input"
-              required
-            />
-          </label>
-          <label className="field">
-            <span>Content Markdown (EN)</span>
-            <textarea
-              className="textarea"
-              value={data.contentEn}
-              onChange={(e) => setData((prev) => ({ ...prev, contentEn: e.target.value }))}
-              style={{ minHeight: "320px", fontFamily: "monospace" }}
-              disabled={busy}
-              data-testid="admin-kb-article-content-en-input"
-              required
-            />
-          </label>
-        </div>
+        {localeTab === "ru" ? (
+          <div className="admin-editor-locale-grid">
+            <label className="field">
+              <span>Title (RU)</span>
+              <input
+                type="text"
+                className="input"
+                value={data.titleRu}
+                onChange={(e) => setData((prev) => ({ ...prev, titleRu: e.target.value }))}
+                disabled={busy}
+                data-testid="admin-kb-article-title-ru-input"
+                required
+              />
+            </label>
+            <label className="field">
+              <span>Excerpt (RU)</span>
+              <textarea
+                className="textarea"
+                value={data.excerptRu}
+                onChange={(e) => setData((prev) => ({ ...prev, excerptRu: e.target.value }))}
+                disabled={busy}
+                data-testid="admin-kb-article-excerpt-ru-input"
+                required
+              />
+            </label>
+            <label className="field admin-editor-content-field">
+              <span>Content Markdown (RU)</span>
+              <textarea
+                className="textarea admin-editor-content"
+                value={data.contentRu}
+                onChange={(e) => setData((prev) => ({ ...prev, contentRu: e.target.value }))}
+                disabled={busy}
+                data-testid="admin-kb-article-content-ru-input"
+                required
+              />
+            </label>
+          </div>
+        ) : (
+          <div className="admin-editor-locale-grid">
+            <label className="field">
+              <span>Title (EN)</span>
+              <input
+                type="text"
+                className="input"
+                value={data.titleEn}
+                onChange={(e) => setData((prev) => ({ ...prev, titleEn: e.target.value }))}
+                disabled={busy}
+                data-testid="admin-kb-article-title-en-input"
+                required
+              />
+            </label>
+            <label className="field">
+              <span>Excerpt (EN)</span>
+              <textarea
+                className="textarea"
+                value={data.excerptEn}
+                onChange={(e) => setData((prev) => ({ ...prev, excerptEn: e.target.value }))}
+                disabled={busy}
+                data-testid="admin-kb-article-excerpt-en-input"
+                required
+              />
+            </label>
+            <label className="field admin-editor-content-field">
+              <span>Content Markdown (EN)</span>
+              <textarea
+                className="textarea admin-editor-content"
+                value={data.contentEn}
+                onChange={(e) => setData((prev) => ({ ...prev, contentEn: e.target.value }))}
+                disabled={busy}
+                data-testid="admin-kb-article-content-en-input"
+                required
+              />
+            </label>
+          </div>
+        )}
 
-        <section className="card" style={{ padding: "20px" }}>
-          <div style={{ display: "flex", gap: "10px", alignItems: "center", marginBottom: "12px" }}>
-            <strong>Preview</strong>
-            <select
-              className="select"
-              value={previewLocale}
-              onChange={(e) => setPreviewLocale(e.target.value as PreviewLocale)}
-              style={{ maxWidth: "130px" }}
-              disabled={previewBusy}
-              data-testid="admin-kb-preview-locale-select"
-            >
-              <option value="ru">RU</option>
-              <option value="en">EN</option>
-            </select>
+        <section className="card admin-editor-preview-card">
+          <div className="admin-editor-preview-head">
+            <strong>Preview ({localeTab.toUpperCase()})</strong>
             <button
               type="button"
               className="button button-muted"
@@ -243,10 +251,10 @@ export const AdminArticleEditor = ({ mode, categories, initialArticle, onSave, o
           </div>
 
           <article className="prose" dangerouslySetInnerHTML={{ __html: previewHtml }} data-testid="admin-kb-preview-content" />
-          {previewError ? <p className="muted" style={{ marginTop: "10px" }}>{previewError}</p> : null}
+          {previewError ? <p className="muted">{previewError}</p> : null}
         </section>
 
-        <div style={{ display: "flex", gap: "12px", justifyContent: "flex-end" }}>
+        <div className="admin-editor-actions">
           <button type="button" className="button button-muted" onClick={onCancel} disabled={busy} data-testid="admin-kb-article-cancel-button">
             Cancel
           </button>
@@ -254,7 +262,8 @@ export const AdminArticleEditor = ({ mode, categories, initialArticle, onSave, o
             {busy ? "Saving..." : mode === "create" ? "Create article" : "Save changes"}
           </button>
         </div>
-        {saveError ? <p className="muted" style={{ margin: 0 }}>{saveError}</p> : null}
+
+        {saveError ? <p className="muted">{saveError}</p> : null}
       </form>
     </section>
   );

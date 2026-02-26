@@ -43,8 +43,18 @@ export async function DELETE(_: Request, context: { params: Promise<{ id: string
     const user = await requireAuthenticatedUser(runtime.supabase);
     await requireAdminRole(runtime.supabase, user.id);
     const { id } = await context.params;
-
-    await runtime.kbRepo.archiveCategory(id);
+    const existing = await runtime.kbRepo.getCategoryById(id);
+    if (!existing) {
+      return NextResponse.json({ error: "Not found" }, { status: 404 });
+    }
+    const linkedArticlesCount = await runtime.kbRepo.countArticlesByCategory(id);
+    if (linkedArticlesCount > 0) {
+      return NextResponse.json(
+        { error: "Cannot delete category with linked articles. Move or delete articles first." },
+        { status: 409 }
+      );
+    }
+    await runtime.kbRepo.deleteCategory(id);
     return NextResponse.json({ ok: true });
   } catch (error) {
     return adminContentErrorResponse(error);

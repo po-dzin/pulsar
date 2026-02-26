@@ -6,7 +6,6 @@ import { getSupabaseBrowserClient } from "@/infrastructure/supabase/client";
 type Labels = {
   requestButton: string;
   signInButton: string;
-  signInHint: string;
   modalTitle: string;
   name: string;
   contact: string;
@@ -68,10 +67,9 @@ export const ProductsRequestPanel = ({ isAuthenticated, labels }: Props) => {
   };
 
   return (
-    <section className="card" style={{ marginTop: "var(--space-4)" }} data-testid="products-request-panel">
+    <section style={{ marginTop: "var(--space-4)" }} data-testid="products-request-panel">
       {isAuthenticated ? (
-        <div className="inline-row" style={{ justifyContent: "space-between", gap: "16px", alignItems: "center" }}>
-          <p className="muted" style={{ margin: 0 }}>{labels.signInHint}</p>
+        <div className="inline-row" style={{ justifyContent: "flex-start", gap: "16px", alignItems: "center" }}>
           <button
             type="button"
             className="button button-primary"
@@ -85,8 +83,7 @@ export const ProductsRequestPanel = ({ isAuthenticated, labels }: Props) => {
           </button>
         </div>
       ) : (
-        <div className="inline-row" style={{ justifyContent: "space-between", gap: "16px", alignItems: "center" }}>
-          <p className="muted" style={{ margin: 0 }}>{labels.signInHint}</p>
+        <div className="inline-row" style={{ justifyContent: "flex-start", gap: "16px", alignItems: "center" }}>
           <button
             type="button"
             className="button button-accent"

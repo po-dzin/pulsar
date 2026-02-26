@@ -164,100 +164,40 @@ export const ProfileHistoryList = ({ items, locale, dictionary }: Props) => {
                     >
                         {/* ── Header row — always visible, click to toggle ── */}
                         <div
-                            style={{
-                                padding: "14px 18px",
-                                cursor: "pointer",
-                            }}
+                            className="profile-history-card-toggle"
                             onClick={() => toggleExpand(item.id)}
                             data-testid={`profile-history-toggle-${index}`}
                         >
-                            {/* Test name */}
-                            <span style={{ fontWeight: 600, fontSize: "0.88rem", display: "block", marginBottom: "8px" }}>
-                                {testName}
+                            <span className="profile-history-name">{testName}</span>
+                            <span className="profile-history-date muted">{dateStr}</span>
+                            <strong className="profile-history-percent">{item.overallPct}%</strong>
+                            <span className="profile-history-level">
+                                {levelTone ? (
+                                    <span className="level-pill" data-tone={levelTone}>{localizedLevel}</span>
+                                ) : (
+                                    <span className="muted">{localizedLevel}</span>
+                                )}
                             </span>
-
-                            {/* Stable 4-col grid: date | % | level | chevron */}
-                            <div style={{
-                                display: "grid",
-                                gridTemplateColumns: "minmax(88px, max-content) 52px 1fr 20px",
-                                alignItems: "center",
-                                gap: "0 10px",
-                            }}>
-                                {/* Date — always one line */}
-                                <span className="muted" style={{ fontSize: "0.78rem", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-                                    {dateStr}
-                                </span>
-
-                                {/* % score — fixed width, right-aligned */}
-                                <strong style={{ fontSize: "1rem", textAlign: "right" }}>
-                                    {item.overallPct}%
-                                </strong>
-
-                                {/* Level label — fills remaining space, truncates if long */}
-                                <span style={{ fontSize: "0.8rem", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                                    {dictionary.profile.level}:{" "}
-                                    {levelTone ? (
-                                        <span className="level-pill" data-tone={levelTone}>{localizedLevel}</span>
-                                    ) : (
-                                        <span className="muted">{localizedLevel}</span>
-                                    )}
-                                </span>
-
-                                {/* Chevron */}
-                                <svg
-                                    width="14" height="14" viewBox="0 0 24 24"
-                                    fill="none" stroke="currentColor" strokeWidth="2.5"
-                                    strokeLinecap="round" strokeLinejoin="round"
-                                    style={{
-                                        transform: isExpanded ? "rotate(180deg)" : "rotate(0deg)",
-                                        transition: "transform 0.2s ease",
-                                        color: "var(--color-text-muted)",
-                                        flexShrink: 0,
-                                        justifySelf: "end",
-                                    }}
-                                >
-                                    <polyline points="6 9 12 15 18 9" />
-                                </svg>
-                            </div>
+                            <svg
+                                width="14"
+                                height="14"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                strokeWidth="2.5"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                className="profile-history-chevron"
+                                data-expanded={isExpanded || undefined}
+                            >
+                                <polyline points="6 9 12 15 18 9" />
+                            </svg>
                         </div>
 
 
                         {/* ── Expanded detail panel ── */}
                         {isExpanded && (
                             <div id={`pdf-content-${item.id}`} style={{ borderTop: "1px solid var(--color-border)", padding: "20px" }}>
-
-                                {/* ── PDF metadata header ── */}
-
-                                <div style={{
-                                    display: "flex",
-                                    flexWrap: "wrap",
-                                    alignItems: "baseline",
-                                    gap: "8px 18px",
-                                    paddingBottom: "14px",
-                                    marginBottom: "18px",
-                                    borderBottom: "1px solid var(--color-border)",
-                                }}>
-                                    <span style={{ fontWeight: 700, fontSize: "1rem" }}>{testName}</span>
-                                    <span className="muted" style={{ fontSize: "0.85rem" }}>{dateStr}</span>
-                                    <span style={{
-                                        fontSize: "0.82rem",
-                                        padding: "2px 10px",
-                                        borderRadius: "20px",
-                                        background: "rgba(128,128,128,0.1)",
-                                        border: "1px solid var(--color-border)",
-                                        color: "var(--color-text-muted)",
-                                        whiteSpace: "nowrap",
-                                    }}>
-                                        {item.overallPct}% ·{" "}
-                                        {levelTone ? (
-                                            <span className="level-pill" data-tone={levelTone}>{localizedLevel}</span>
-                                        ) : (
-                                            localizedLevel
-                                        )}
-                                    </span>
-                                </div>
-
-
                                 <div className="grid cols-2" style={{ marginBottom: "20px", gap: "10px" }}>
                                     <div style={{ background: "rgba(128,128,128,0.06)", padding: "14px", borderRadius: "8px" }}>
                                         <h4 style={{ margin: "0 0 10px", fontSize: "0.75rem", textTransform: "uppercase", letterSpacing: "0.08em", color: "var(--color-text-muted)" }}>

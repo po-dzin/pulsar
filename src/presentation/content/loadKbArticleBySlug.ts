@@ -1,12 +1,19 @@
 import type { Locale } from "@/domain/psychosomatic/model";
 import { createRuntime } from "@/infrastructure/repositories/factory/createRuntime";
 import { localKbArticleFallback } from "@/presentation/content/defaultData";
-import { loadArticleContent } from "@/presentation/markdown/loadArticleContent";
 import type { KbRepositoryPort } from "@/application/ports/repositories";
 
 export type LoadedKbArticle = {
   title: string;
   content: string;
+};
+
+const resolveArticleBody = (value: string, locale: Locale): string => {
+  const normalized = value.trim();
+  if (!normalized) {
+    return getEmptyArticleBody(locale);
+  }
+  return normalized;
 };
 
 const getEmptyArticleBody = (locale: Locale): string =>
@@ -20,14 +27,15 @@ export const loadKbArticleBySlug = async (slug: string, locale: Locale, repo?: K
     const row = await kbRepo.getArticleBySlug(slug);
     if (row) {
       const localizedTitle = locale === "ru" ? row.titleRu : row.titleEn;
-      const localizedContent = locale === "ru" ? row.contentRu : row.contentEn;
       const fallbackTitle = locale === "ru" ? row.titleEn : row.titleRu;
+      const localizedContent = locale === "ru" ? row.contentRu : row.contentEn;
+      const fallbackContent = locale === "ru" ? row.contentEn : row.contentRu;
       const title = localizedTitle.trim() || fallbackTitle.trim() || slug;
-      const content = localizedContent.trim() || getEmptyArticleBody(locale);
+      const content = resolveArticleBody(localizedContent || fallbackContent, locale);
       return { title, content };
     }
   } catch {
-    // Fallback to local markdown if DB is unavailable.
+    // Fallback to local in-memory content if DB is unavailable.
   }
 
   const fallback = localKbArticleFallback[slug];
@@ -35,9 +43,8 @@ export const loadKbArticleBySlug = async (slug: string, locale: Locale, repo?: K
     return null;
   }
 
-  const parsed = await loadArticleContent(fallback.path[locale]);
   return {
     title: fallback.title[locale],
-    content: parsed.content,
+    content: fallback.content[locale] || getEmptyArticleBody(locale),
   };
 };

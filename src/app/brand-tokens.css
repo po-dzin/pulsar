@@ -31,6 +31,13 @@
   --glass-blur: 22px;
   --glass-blur-strong: 30px;
   --grain-opacity: 0.06;
+  --admin-surface: var(--color-surface-strong);
+  --admin-surface-muted: var(--color-surface-muted);
+  --admin-border: var(--color-border);
+  --admin-text: var(--color-text);
+  --admin-text-muted: var(--color-text-muted);
+  --admin-accent: var(--color-accent);
+  --admin-danger: var(--color-danger);
 }
 
 :root,
