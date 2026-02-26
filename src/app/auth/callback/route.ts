@@ -31,10 +31,25 @@ export async function GET(request: Request) {
 
   try {
     const supabase = await getSupabaseServerClient();
-    const { error } = await supabase.auth.exchangeCodeForSession(code);
+    const { data, error } = await supabase.auth.exchangeCodeForSession(code);
     if (error) {
       return NextResponse.redirect(`${origin}/?auth=error`);
     }
+
+    const user = data.user ?? data.session?.user;
+    if (user) {
+      const locale = url.searchParams.get("lang") === "en" ? "en" : "ru";
+      await supabase.from("profiles").upsert(
+        {
+          id: user.id,
+          email: user.email ?? "",
+          full_name: user.user_metadata?.full_name ?? user.user_metadata?.name ?? null,
+          locale,
+        },
+        { onConflict: "id" }
+      );
+    }
+
     return NextResponse.redirect(fallbackRedirect);
   } catch {
     return NextResponse.redirect(`${origin}/?auth=error`);

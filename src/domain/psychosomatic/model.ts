@@ -1,7 +1,8 @@
 import type { Result } from "@/domain/common/result";
 
 export type Locale = "ru" | "en";
-export type TestType = "psychosomatic_v1";
+export type PhysicalTestType = `physical_${string}_v1`;
+export type TestType = "psychosomatic_v1" | PhysicalTestType;
 
 export type AnswerValue = "none" | "rare" | "sometimes" | "often";
 

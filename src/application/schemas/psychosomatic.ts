@@ -21,6 +21,7 @@ export const psychoDraftSchema = z.object({
 export const psychoCompleteSchema = z.object({
   sessionId: z.string().uuid(),
   answers: z.object(completeAnswersShape),
+  consentAcceptedAt: z.string().datetime().optional(),
 });
 
 export const consultationLeadSchema = z.object({

@@ -11,7 +11,7 @@ type User = {
 
 type RoleItem = {
   userId: string;
-  role: "admin" | "editor";
+  role: "admin";
   email: string | null;
   fullName: string | null;
   createdAt: string;
@@ -19,7 +19,7 @@ type RoleItem = {
 
 type ConfirmState = {
   userId: string;
-  role: "admin" | "editor";
+  role: "admin";
   label: string;
 } | null;
 
@@ -27,7 +27,6 @@ export const AdminRolesPanel = () => {
   const [users, setUsers] = useState<User[]>([]);
   const [roles, setRoles] = useState<RoleItem[]>([]);
   const [selectedUserId, setSelectedUserId] = useState("");
-  const [role, setRole] = useState<"admin" | "editor">("editor");
   const [busy, setBusy] = useState(false);
   const [status, setStatus] = useState<string | null>(null);
   const [confirmState, setConfirmState] = useState<ConfirmState>(null);
@@ -58,7 +57,7 @@ export const AdminRolesPanel = () => {
     const response = await fetch("/api/admin/roles", {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ userId: selectedUser.id, role }),
+      body: JSON.stringify({ userId: selectedUser.id, role: "admin" }),
     });
     setBusy(false);
 
@@ -72,11 +71,11 @@ export const AdminRolesPanel = () => {
     setStatus("Role assigned");
   };
 
-  const confirmRevoke = (userId: string, targetRole: "admin" | "editor", label: string) => {
+  const confirmRevoke = (userId: string, targetRole: "admin", label: string) => {
     setConfirmState({ userId, role: targetRole, label });
   };
 
-  const revokeRole = async (userId: string, targetRole: "admin" | "editor") => {
+  const revokeRole = async (userId: string, targetRole: "admin") => {
     setBusy(true);
     setStatus(null);
     const response = await fetch("/api/admin/roles", {
@@ -132,16 +131,8 @@ export const AdminRolesPanel = () => {
             </select>
           </label>
 
-          <label className="field">
-            <span>Role</span>
-            <select className="select" value={role} onChange={(event) => setRole(event.target.value as "admin" | "editor")} disabled={busy}>
-              <option value="editor">editor</option>
-              <option value="admin">admin</option>
-            </select>
-          </label>
-
           <button type="button" className="button button-primary" onClick={assignRole} disabled={busy} data-testid="assign-role-button">
-            Assign role
+            Grant admin
           </button>
 
           {status ? <p className="muted">{status}</p> : null}

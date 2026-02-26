@@ -2,24 +2,32 @@ import type { Locale } from "@/domain/psychosomatic/model";
 import { createRuntime } from "@/infrastructure/repositories/factory/createRuntime";
 import { localKbArticleFallback } from "@/presentation/content/defaultData";
 import { loadArticleContent } from "@/presentation/markdown/loadArticleContent";
+import type { KbRepositoryPort } from "@/application/ports/repositories";
 
 export type LoadedKbArticle = {
   title: string;
   content: string;
 };
 
-export const loadKbArticleBySlug = async (slug: string, locale: Locale): Promise<LoadedKbArticle | null> => {
+const getEmptyArticleBody = (locale: Locale): string =>
+  locale === "ru"
+    ? "## Материал обновляется\n\nКонтент для этой статьи скоро появится."
+    : "## Content is being updated\n\nThis article will be available soon.";
+
+export const loadKbArticleBySlug = async (slug: string, locale: Locale, repo?: KbRepositoryPort): Promise<LoadedKbArticle | null> => {
   try {
-    const runtime = await createRuntime();
-    const row = await runtime.kbRepo.getArticleBySlug(slug);
+    const kbRepo = repo ?? (await createRuntime()).kbRepo;
+    const row = await kbRepo.getArticleBySlug(slug);
     if (row) {
-      const path = locale === "ru" ? row.mdPathRu : row.mdPathEn;
-      const parsed = await loadArticleContent(path);
-      const title = locale === "ru" ? row.titleRu : row.titleEn;
-      return { title, content: parsed.content };
+      const localizedTitle = locale === "ru" ? row.titleRu : row.titleEn;
+      const localizedContent = locale === "ru" ? row.contentRu : row.contentEn;
+      const fallbackTitle = locale === "ru" ? row.titleEn : row.titleRu;
+      const title = localizedTitle.trim() || fallbackTitle.trim() || slug;
+      const content = localizedContent.trim() || getEmptyArticleBody(locale);
+      return { title, content };
     }
   } catch {
-    // fallback to local markdown files
+    // Fallback to local markdown if DB is unavailable.
   }
 
   const fallback = localKbArticleFallback[slug];

@@ -5,6 +5,7 @@ import { loadKbArticleBySlug } from "@/presentation/content/loadKbArticleBySlug"
 import { renderSafeMarkdown } from "@/presentation/markdown/renderSafeMarkdown";
 import Link from "next/link";
 import { withLang } from "@/presentation/components/LocaleLinks";
+import { createRuntime } from "@/infrastructure/repositories/factory/createRuntime";
 
 export default async function KnowledgeArticlePage({
   params,
@@ -16,13 +17,14 @@ export default async function KnowledgeArticlePage({
   const route = await params;
   const query = await searchParams;
   const context = await getViewContext(`/knowledge/${route.slug}`, query.lang);
-  const article = await loadKbArticleBySlug(route.slug, context.locale);
+  const runtime = await createRuntime().catch(() => null);
+  const article = await loadKbArticleBySlug(route.slug, context.locale, runtime?.kbRepo);
 
   if (!article) {
     notFound();
   }
 
-  const html = renderSafeMarkdown(article.content);
+  const html = renderSafeMarkdown(article.content ?? "");
 
   return (
     <PageScaffold
@@ -31,7 +33,7 @@ export default async function KnowledgeArticlePage({
       pathname={context.pathname}
       isAuthenticated={Boolean(context.userId)}
     >
-      <article className="card prose">
+      <article className="card prose" data-testid="knowledge-article">
         <Link
           href={withLang("/knowledge", context.locale)}
           className="kb-back-btn"
@@ -42,8 +44,8 @@ export default async function KnowledgeArticlePage({
             <polyline points="12 19 5 12 12 5"></polyline>
           </svg>
         </Link>
-        <h1>{article.title}</h1>
-        <div dangerouslySetInnerHTML={{ __html: html }} />
+        <h1 data-testid="knowledge-article-title">{article.title}</h1>
+        <div data-testid="knowledge-article-content" dangerouslySetInnerHTML={{ __html: html }} />
       </article>
     </PageScaffold>
   );

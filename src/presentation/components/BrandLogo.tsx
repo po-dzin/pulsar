@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState, useEffect } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import Link from "next/link";
 
 interface BrandLogoProps {
@@ -23,7 +23,7 @@ export const BrandLogo = ({ href, text }: BrandLogoProps) => {
         rAF: 0,
     });
 
-    const render = (now: number) => {
+    const render = useCallback((now: number) => {
         const p = physics.current;
         let waveActive = false;
         let waveRadius = 0;
@@ -85,7 +85,7 @@ export const BrandLogo = ({ href, text }: BrandLogoProps) => {
         });
 
         if (p.isHovering || waveActive) {
-            p.rAF = requestAnimationFrame(render);
+            p.rAF = requestAnimationFrame((ts) => render(ts));
         } else {
             // Loop pauses naturally when idle. Ensure everything is blacked out.
             letterRefs.current.forEach((el) => {
@@ -95,13 +95,13 @@ export const BrandLogo = ({ href, text }: BrandLogoProps) => {
             });
             p.rAF = 0;
         }
-    };
+    }, []);
 
-    const startLoop = () => {
+    const startLoop = useCallback(() => {
         if (!physics.current.rAF) {
             physics.current.rAF = requestAnimationFrame(render);
         }
-    };
+    }, [render]);
 
     useEffect(() => {
         const handleGlobalMouseMove = (e: MouseEvent) => {
@@ -128,7 +128,7 @@ export const BrandLogo = ({ href, text }: BrandLogoProps) => {
 
         window.addEventListener('mousemove', handleGlobalMouseMove);
         return () => window.removeEventListener('mousemove', handleGlobalMouseMove);
-    }, []);
+    }, [startLoop]);
 
     const handleClick = (e: React.MouseEvent) => {
         if (e.button === 0 && !e.ctrlKey && !e.metaKey) {

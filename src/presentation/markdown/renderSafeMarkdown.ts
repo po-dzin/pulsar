@@ -6,8 +6,9 @@ const escapeHtml = (value: string): string =>
     .replaceAll('"', "&quot;")
     .replaceAll("'", "&#39;");
 
-export const renderSafeMarkdown = (input: string): string => {
-  const lines = input.split("\n");
+export const renderSafeMarkdown = (input?: string | null): string => {
+  const normalized = typeof input === "string" ? input : "";
+  const lines = normalized.split("\n");
   const output: string[] = [];
   let inList = false;
 

@@ -7,6 +7,7 @@ export type CompletePsychoInput = {
   userId: string;
   sessionId: string;
   answers: PsychoAnswers;
+  consentAcceptedAt?: string;
 };
 
 export type CompletePsychoOutput =
@@ -23,6 +24,13 @@ export const completePsychoTestUseCase =
     }
 
     const score = scoreResult.value;
+
+    await repo.ensureSession(
+      input.userId,
+      input.sessionId,
+      "psychosomatic_v1",
+      input.consentAcceptedAt
+    );
 
     await repo.saveCompletedResult({
       userId: input.userId,

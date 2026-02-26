@@ -5,12 +5,13 @@ import type {
   TestResultRow,
 } from "@/application/ports/repositories";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import type { TestType } from "@/domain/psychosomatic/model";
 
 type DiagnosticsResultDbRow = {
   id: string;
   user_id: string;
   session_id: string;
-  test_type: "psychosomatic_v1";
+  test_type: string;
   overall_pct: number;
   level: string;
   zones_json: unknown;
@@ -23,7 +24,7 @@ const mapResult = (row: DiagnosticsResultDbRow): TestResultRow => ({
   id: row.id,
   userId: row.user_id,
   sessionId: row.session_id,
-  testType: row.test_type,
+  testType: row.test_type as TestType,
   overallPct: row.overall_pct,
   level: row.level,
   zones: row.zones_json,
@@ -82,13 +83,12 @@ export class SupabaseDiagnosticsRepository implements DiagnosticsRepositoryPort 
       .eq("user_id", payload.userId);
   }
 
-  async listResultsByUser(userId: string, testType: string): Promise<TestResultRow[]> {
-    const { data, error } = await this.supabase
-      .from("test_results")
-      .select("*")
-      .eq("user_id", userId)
-      .eq("test_type", testType)
-      .order("created_at", { ascending: false });
+  async listResultsByUser(userId: string, testType?: TestType): Promise<TestResultRow[]> {
+    let query = this.supabase.from("test_results").select("*").eq("user_id", userId).order("created_at", { ascending: false });
+    if (testType) {
+      query = query.eq("test_type", testType);
+    }
+    const { data, error } = await query;
 
     if (error) {
       throw error;

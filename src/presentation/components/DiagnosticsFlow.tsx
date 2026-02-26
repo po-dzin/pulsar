@@ -1,10 +1,11 @@
 "use client";
 
-import { useCallback, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { Locale, AnswerValue, PsychoAnswers, PsychoScore } from "@/domain/psychosomatic/model";
 import { psychosomaticQuestions, getQuestionOptions, levelLabels, zoneLabels } from "@/domain/psychosomatic/questions";
 import { scorePsychosomatic } from "@/domain/psychosomatic/scoring";
 import { getSupabaseBrowserClient } from "@/infrastructure/supabase/client";
+import { PhysicalDiagnosticsFlow } from "@/presentation/components/PhysicalDiagnosticsFlow";
 
 type Props = {
   isAuthenticated: boolean;
@@ -37,8 +38,17 @@ type Props = {
 };
 
 const orderedAnswers: AnswerValue[] = ["none", "rare", "sometimes", "often"];
+const pendingGuestAttemptKey = "impulse_psychosomatic_pending_v1";
+
+type PendingGuestAttempt = {
+  sessionId: string;
+  answers: PsychoAnswers;
+  consentAcceptedAt?: string;
+  completedAt: string;
+};
 
 export const DiagnosticsFlow = ({ isAuthenticated, locale, labels, productsHref, knowledgeHref, initialHistory }: Props) => {
+  const [activeFlow, setActiveFlow] = useState<"psychosomatic" | "physical">("psychosomatic");
   const [consent, setConsent] = useState(false);
   const [started, setStarted] = useState(false);
   const [answers, setAnswers] = useState<Partial<PsychoAnswers>>({});
@@ -55,6 +65,68 @@ export const DiagnosticsFlow = ({ isAuthenticated, locale, labels, productsHref,
     setBusy(false);
   };
   const questionRefs = useRef<Map<number, HTMLElement>>(new Map());
+
+  const persistGuestAttempt = useCallback((payload: PendingGuestAttempt) => {
+    try {
+      window.localStorage.setItem(pendingGuestAttemptKey, JSON.stringify(payload));
+    } catch {
+      // localStorage unavailable; keep guest-only in-memory result.
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!isAuthenticated || result) {
+      return;
+    }
+
+    let cancelled = false;
+
+    const restoreGuestAttempt = async () => {
+      try {
+        const raw = window.localStorage.getItem(pendingGuestAttemptKey);
+        if (!raw) {
+          return;
+        }
+
+        const pending = JSON.parse(raw) as PendingGuestAttempt;
+        if (!pending?.sessionId || !pending?.answers) {
+          window.localStorage.removeItem(pendingGuestAttemptKey);
+          return;
+        }
+
+        setBusy(true);
+        const response = await fetch("/api/diagnostics/psychosomatic/complete", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            sessionId: pending.sessionId,
+            answers: pending.answers,
+            consentAcceptedAt: pending.consentAcceptedAt,
+          }),
+        });
+
+        const data = await response.json().catch(() => ({}));
+        if (!cancelled && response.ok && data.result) {
+          setResult(data.result as PsychoScore);
+          setStarted(false);
+          setAnswers({});
+          window.localStorage.removeItem(pendingGuestAttemptKey);
+        }
+      } catch {
+        // ignore restore errors silently
+      } finally {
+        if (!cancelled) {
+          setBusy(false);
+        }
+      }
+    };
+
+    void restoreGuestAttempt();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [isAuthenticated, result]);
 
   const answeredCount = useMemo(
     () => psychosomaticQuestions.filter((q) => answers[q.key] !== undefined).length,
@@ -108,6 +180,12 @@ export const DiagnosticsFlow = ({ isAuthenticated, locale, labels, productsHref,
       const localResult = scorePsychosomatic(payloadAnswers);
       if (localResult.ok) {
         setResult(localResult.value);
+        persistGuestAttempt({
+          sessionId,
+          answers: payloadAnswers,
+          consentAcceptedAt: consent ? new Date().toISOString() : undefined,
+          completedAt: new Date().toISOString(),
+        });
       }
       return;
     }
@@ -117,11 +195,20 @@ export const DiagnosticsFlow = ({ isAuthenticated, locale, labels, productsHref,
       const response = await fetch("/api/diagnostics/psychosomatic/complete", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ sessionId, answers: payloadAnswers }),
+        body: JSON.stringify({
+          sessionId,
+          answers: payloadAnswers,
+          consentAcceptedAt: consent ? new Date().toISOString() : undefined,
+        }),
       });
       const data = await response.json();
       if (response.ok && data.result) {
         setResult(data.result as PsychoScore);
+        try {
+          window.localStorage.removeItem(pendingGuestAttemptKey);
+        } catch {
+          // noop
+        }
       }
     } finally {
       setBusy(false);
@@ -135,86 +222,130 @@ export const DiagnosticsFlow = ({ isAuthenticated, locale, labels, productsHref,
     setSessionId(crypto.randomUUID());
   };
 
+  if (activeFlow === "physical") {
+    return (
+      <>
+        <div className="test-selector">
+          <button
+            type="button"
+            className="test-selector-tab"
+            onClick={() => setActiveFlow("psychosomatic")}
+            data-testid="flow-tab-psychosomatic"
+          >
+            {labels.testSelectorPsychosomatic}
+          </button>
+          <button type="button" className="test-selector-tab" data-active={true} data-testid="flow-tab-physical">
+            {labels.testSelectorPhysical}
+          </button>
+        </div>
+        <PhysicalDiagnosticsFlow isAuthenticated={isAuthenticated} locale={locale} />
+      </>
+    );
+  }
+
   /* ── Result view ─────────────────────────────────────────── */
   if (result) {
     return (
-      <section className="diagnostics-result" data-testid="result-card">
-        <h2>{labels.resultTitle}</h2>
-        <p data-testid="result-overall-pct">
-          {labels.overallLabel}: <strong>{result.overallPct}%</strong>
-        </p>
-        <p data-testid="result-level">
-          {labels.levelLabel}: <strong>{levelLabels[locale][result.level]}</strong>
-        </p>
-
-        <div className="grid cols-2">
-          <div className="card" style={{ padding: 14 }}>
-            <h3>{labels.strongLabel}</h3>
-            <ul>
-              {result.zonesStrong.map((zone) => (
-                <li key={`strong-${zone.zone}`}>
-                  {zoneLabels[locale][zone.zone]}: {zone.score}%
-                </li>
-              ))}
-            </ul>
-          </div>
-          <div className="card" style={{ padding: 14 }}>
-            <h3>{labels.growthLabel}</h3>
-            <ul>
-              {result.zonesGrowth.map((zone) => (
-                <li key={`growth-${zone.zone}`}>
-                  {zoneLabels[locale][zone.zone]}: {zone.score}%
-                </li>
-              ))}
-            </ul>
-          </div>
+      <>
+        <div className="test-selector">
+          <button type="button" className="test-selector-tab" data-active={true} data-testid="flow-tab-psychosomatic">
+            {labels.testSelectorPsychosomatic}
+          </button>
+          <button
+            type="button"
+            className="test-selector-tab"
+            onClick={() => setActiveFlow("physical")}
+            data-testid="flow-tab-physical"
+          >
+            {labels.testSelectorPhysical}
+          </button>
         </div>
+        <section className="diagnostics-result" data-testid="result-card">
+          <h2>{labels.resultTitle}</h2>
+          <p data-testid="result-overall-pct">
+            {labels.overallLabel}: <strong>{result.overallPct}%</strong>
+          </p>
+          <p data-testid="result-level">
+            {labels.levelLabel}: <strong>{levelLabels[locale][result.level]}</strong>
+          </p>
 
-        <div className="card" style={{ padding: 14 }} data-testid="result-recommendations">
-          <h3>{labels.recommendationsLabel}</h3>
-          {result.recommendations.map((block, idx) => (
-            <div key={idx}>
-              <strong>{block.title[locale]}</strong>
+          <div className="grid cols-2" style={{ gap: 12, marginTop: 16 }}>
+            <div className="card" style={{ padding: 14 }}>
+              <h3>{labels.strongLabel}</h3>
               <ul>
-                {block.items.map((item, itemIdx) => (
-                  <li key={itemIdx}>{item[locale]}</li>
+                {result.zonesStrong.map((zone) => (
+                  <li key={`strong-${zone.zone}`}>
+                    {zoneLabels[locale][zone.zone]}: {zone.score}%
+                  </li>
                 ))}
               </ul>
             </div>
-          ))}
-        </div>
+            <div className="card" style={{ padding: 14 }}>
+              <h3>{labels.growthLabel}</h3>
+              <ul>
+                {result.zonesGrowth.map((zone) => (
+                  <li key={`growth-${zone.zone}`}>
+                    {zoneLabels[locale][zone.zone]}: {zone.score}%
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
 
-        {!isAuthenticated ? (
-          <div className="card" style={{ padding: 16, marginTop: 16, border: '1px solid var(--color-accent-dim)' }}>
-            <p style={{ margin: 0, color: 'var(--color-text)', marginBottom: 16 }}>{labels.guestModeNotice}</p>
+          <div className="card" style={{ padding: 16, marginTop: 12 }} data-testid="result-recommendations">
+            <h3>{labels.recommendationsLabel}</h3>
+            {result.recommendations.map((block, idx) => (
+              <div key={idx} style={{ marginTop: idx > 0 ? 14 : 10 }}>
+                <strong>{block.title[locale]}</strong>
+                <ul style={{ marginTop: 6, marginBottom: 0 }}>
+                  {block.items.map((item, itemIdx) => (
+                    <li key={itemIdx}>{item[locale]}</li>
+                  ))}
+                </ul>
+              </div>
+            ))}
+          </div>
+
+          {!isAuthenticated ? (
+            <div className="card" style={{ padding: 16, marginTop: 16, border: '1px solid var(--color-accent-dim)' }}>
+              <p style={{ margin: 0, color: 'var(--color-text)', marginBottom: 16 }}>{labels.guestModeNotice}</p>
+              <button
+                type="button"
+                className="button button-accent"
+                onClick={signIn}
+                disabled={busy}
+                data-testid="psych-result-signin-button"
+              >
+                {locale === "ru" ? "Войти" : "Sign in"}
+              </button>
+            </div>
+          ) : null}
+
+          <div className="inline-row" style={{ marginTop: 16 }}>
+            <a href={productsHref} className="button button-primary" data-testid="cta-go-products">
+              {labels.toProducts}
+            </a>
+            <a href={knowledgeHref} className="button button-muted">
+              {labels.toKnowledge}
+            </a>
             <button
               type="button"
-              className="button button-accent"
-              onClick={signIn}
-              disabled={busy}
+              className="button button-muted"
+              onClick={handleRestart}
+              data-testid="restart-button"
             >
-              {locale === "ru" ? "Войти через Google" : "Sign in with Google"}
+              {labels.restart}
+            </button>
+            <button
+              type="button"
+              className="button button-muted"
+              onClick={() => setActiveFlow("physical")}
+            >
+              {labels.testSelectorPhysical}
             </button>
           </div>
-        ) : null}
-
-        <div className="inline-row" style={{ marginTop: 16 }}>
-          <a href={productsHref} className="button button-primary" data-testid="cta-go-products">
-            {labels.toProducts}
-          </a>
-          <a href={knowledgeHref} className="button button-muted">
-            {labels.toKnowledge}
-          </a>
-          <button
-            type="button"
-            className="button button-muted"
-            onClick={handleRestart}
-            data-testid="restart-button"
-          >
-            {labels.restart}
-          </button>
-        </div>
-      </section>
+        </section>
+      </>
     );
   }
 
@@ -224,18 +355,21 @@ export const DiagnosticsFlow = ({ isAuthenticated, locale, labels, productsHref,
       <>
         {/* Test selector */}
         <div className="test-selector">
-          <button type="button" className="test-selector-tab" data-active={true}>
+          <button type="button" className="test-selector-tab" data-active={true} data-testid="flow-tab-psychosomatic">
             {labels.testSelectorPsychosomatic}
           </button>
-          <button type="button" className="test-selector-tab" disabled>
+          <button
+            type="button"
+            className="test-selector-tab"
+            onClick={() => setActiveFlow("physical")}
+            data-testid="flow-tab-physical"
+          >
             {labels.testSelectorPhysical}
           </button>
         </div>
 
         <section className="card">
-          <p className="muted">{labels.description}</p>
-
-
+          <p className="muted" style={{ whiteSpace: "pre-line" }}>{labels.description}</p>
 
           <label className="consent-row" data-selected={consent}>
             <input
@@ -268,10 +402,20 @@ export const DiagnosticsFlow = ({ isAuthenticated, locale, labels, productsHref,
     <>
       {/* Test selector */}
       <div className="test-selector">
-        <button type="button" className="test-selector-tab" data-active={true}>
+        <button
+          type="button"
+          className="test-selector-tab"
+          data-active={true}
+          data-testid="flow-tab-psychosomatic"
+        >
           {labels.testSelectorPsychosomatic}
         </button>
-        <button type="button" className="test-selector-tab" disabled>
+        <button
+          type="button"
+          className="test-selector-tab"
+          onClick={() => setActiveFlow("physical")}
+          data-testid="flow-tab-physical"
+        >
           {labels.testSelectorPhysical}
         </button>
       </div>

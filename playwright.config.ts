@@ -1,7 +1,8 @@
 import { defineConfig, devices } from "@playwright/test";
 
-const baseURL = process.env.E2E_BASE_URL || "http://127.0.0.1:3000";
+const baseURL = process.env.E2E_BASE_URL || "http://localhost:3000";
 const fullMobileMatrix = process.env.E2E_FULL_MOBILE_MATRIX === "1" || process.env.CI === "1";
+const storageState = process.env.E2E_STORAGE_STATE;
 
 export default defineConfig({
   testDir: "tests/e2e",
@@ -14,6 +15,7 @@ export default defineConfig({
     trace: "retain-on-failure",
     video: "retain-on-failure",
     screenshot: "only-on-failure",
+    ...(storageState ? { storageState } : {}),
   },
   webServer: {
     command: process.env.E2E_WEB_SERVER_COMMAND || "npm run dev -- --hostname 127.0.0.1 --port 3000",

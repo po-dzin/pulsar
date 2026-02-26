@@ -7,6 +7,8 @@ export const metadata: Metadata = {
   description: "IMPULSE diagnostics and transformation portal",
 };
 
+import { UiModeProvider } from "@/presentation/components/UiModeProvider";
+
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" suppressHydrationWarning>
@@ -16,16 +18,21 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             __html: `
               (() => {
                 try {
-                  const stored = localStorage.getItem('impulse-theme');
+                  const storedTheme = localStorage.getItem('impulse-theme');
                   const systemDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-                  const theme = stored === 'light' || stored === 'dark' ? stored : (systemDark ? 'dark' : 'light');
+                  const theme = storedTheme === 'light' || storedTheme === 'dark' ? storedTheme : (systemDark ? 'dark' : 'light');
                   document.documentElement.setAttribute('data-theme', theme);
+
+                  const storedMode = localStorage.getItem('impulse-ui-mode');
+                  if (storedMode === 'bento') {
+                    document.documentElement.setAttribute('data-ui-mode', 'bento');
+                  }
                 } catch (e) {}
               })();
             `,
           }}
         />
-        {children}
+        <UiModeProvider>{children}</UiModeProvider>
       </body>
     </html>
   );

@@ -21,14 +21,15 @@
     "sections": {
       "approachTitle": "System, not chaos",
       "approachBody": "We focus on practical integration: awareness, regulation, and sustainable action.",
+      "diagnosticsBody": "A living psychosomatic assessment across seven key zones: sleep, energy, body, breath. Get your personalized profile and recovery roadmap.",
       "loopTitle": "How it works",
       "loopBody": "Google sign-in, psychosomatic diagnostics, inline result, recommendations, products and consultation."
     }
   },
   "diagnostics": {
-    "title": "Psychosomatic diagnostics",
-    "subtitle": "16 questions, 7-10 minutes. Save progress and get your result inline.",
-    "description": "The test covers key psychosomatic areas: sleep, energy, digestion, anxiety and more. Based on your answers you'll get a personalized profile and recommendations.",
+    "title": "Diagnostics",
+    "subtitle": "Understand your current state and get the next practical step.",
+    "description": "16 questions, 7-10 minutes. Progress saves automatically, results show inline.\n\nThe test covers key psychosomatic areas: sleep, energy, digestion, anxiety and more. Based on your answers you'll get a personalized profile and recommendations.",
     "consent": "I agree to process my diagnostic data for result storage and progress tracking.",
     "start": "Start test",
     "next": "Next",
@@ -43,7 +44,7 @@
     "secondTestCta": "Join waitlist",
     "testSelector": {
       "psychosomatic": "Psychosomatic test",
-      "physical": "Physical test (coming soon)"
+      "physical": "Physical test"
     }
   },
   "products": {
@@ -54,7 +55,9 @@
     "consultContact": "Contact (email/telegram)",
     "consultMessage": "What do you need help with?",
     "consultSubmit": "Send request",
-    "consultSuccess": "Your request is sent. We will contact you shortly."
+    "consultSuccess": "Your request is sent. We will contact you shortly.",
+    "consultAuthRequired": "Sign in to submit a consultation request.",
+    "consultError": "Request failed, try again."
   },
   "knowledge": {
     "title": "Knowledge base",
@@ -92,6 +95,7 @@
     "history": "Test History",
     "noHistory": "You haven't taken any tests yet.",
     "download": "Download PDF",
+    "downloadLoading": "Loading PDF...",
     "score": "Score",
     "level": "Level",
     "date": "Date",

@@ -1,13 +1,10 @@
 import type {
   Locale,
-  PsychoAnswers,
-  PsychoQuestionKey,
-  PsychoScore,
   TestType,
 } from "@/domain/psychosomatic/model";
 
 export type LeadStatus = "new" | "in_progress" | "done" | "archived";
-export type AdminRole = "admin" | "editor";
+export type AdminRole = "admin";
 
 export type UserProfile = {
   id: string;
@@ -54,6 +51,8 @@ export type KbCategoryRow = {
   titleRu: string;
   titleEn: string;
   sortOrder: number;
+  isArchived: boolean;
+  updatedAt: string | null;
 };
 
 export type KbArticleRow = {
@@ -64,17 +63,56 @@ export type KbArticleRow = {
   titleEn: string;
   excerptRu: string;
   excerptEn: string;
-  mdPathRu: string;
-  mdPathEn: string;
+  contentRu: string;
+  contentEn: string;
   isPublished: boolean;
   publishedAt: string | null;
+  isArchived: boolean;
+  updatedAt: string | null;
+  createdBy: string | null;
+  updatedBy: string | null;
+};
+
+export type KbCategoryInput = {
+  slug: string;
+  titleRu: string;
+  titleEn: string;
+  sortOrder?: number;
+};
+
+export type KbCategoryUpdate = Partial<KbCategoryInput> & {
+  isArchived?: boolean;
+};
+
+export type KbArticleInput = {
+  categoryId: string;
+  slug: string;
+  titleRu: string;
+  titleEn: string;
+  excerptRu: string;
+  excerptEn: string;
+  contentRu: string;
+  contentEn: string;
+  isPublished?: boolean;
+};
+
+export type KbArticleUpdate = Partial<KbArticleInput> & {
+  isArchived?: boolean;
+};
+
+export type SerializedTestScore = {
+  overallPct: number;
+  level: string;
+  zones: unknown;
+  riskFlags: unknown;
+  recommendations: unknown;
 };
 
 export type SaveDraftPayload = {
   userId: string;
   sessionId: string;
   testType: TestType;
-  questionKey: PsychoQuestionKey;
+  questionKey: string;
   answerKey: string;
   score: number;
   consentAcceptedAt?: string;
@@ -84,15 +122,15 @@ export type SaveResultPayload = {
   userId: string;
   sessionId: string;
   testType: TestType;
-  answers: PsychoAnswers;
-  score: PsychoScore;
+  answers: Record<string, string>;
+  score: SerializedTestScore;
 };
 
 export interface DiagnosticsRepositoryPort {
   ensureSession(userId: string, sessionId: string, testType: TestType, consentAcceptedAt?: string): Promise<void>;
   saveDraftAnswer(payload: SaveDraftPayload): Promise<void>;
   saveCompletedResult(payload: SaveResultPayload): Promise<void>;
-  listResultsByUser(userId: string, testType: TestType): Promise<TestResultRow[]>;
+  listResultsByUser(userId: string, testType?: TestType): Promise<TestResultRow[]>;
   listAllResults(): Promise<TestResultRow[]>;
 }
 
@@ -103,12 +141,18 @@ export interface LeadsRepositoryPort {
 }
 
 export interface KbRepositoryPort {
-  listCategories(): Promise<KbCategoryRow[]>;
-  listArticles(): Promise<KbArticleRow[]>;
+  listCategories(includeArchived?: boolean): Promise<KbCategoryRow[]>;
+  getCategoryById(id: string): Promise<KbCategoryRow | null>;
+  createCategory(input: KbCategoryInput): Promise<KbCategoryRow>;
+  updateCategory(id: string, updates: KbCategoryUpdate): Promise<KbCategoryRow>;
+  archiveCategory(id: string): Promise<void>;
+  listArticles(options?: { includeArchived?: boolean; includeDrafts?: boolean; categoryId?: string }): Promise<KbArticleRow[]>;
   listAllArticles(): Promise<KbArticleRow[]>;
+  getArticleById(id: string): Promise<KbArticleRow | null>;
   getArticleBySlug(slug: string): Promise<KbArticleRow | null>;
-  upsertArticleMeta(article: KbArticleRow): Promise<void>;
-  setArticlePublishState(id: string, isPublished: boolean): Promise<void>;
+  createArticle(input: KbArticleInput, actorUserId: string): Promise<KbArticleRow>;
+  updateArticle(id: string, updates: KbArticleUpdate, actorUserId: string): Promise<KbArticleRow>;
+  archiveArticle(id: string, actorUserId: string): Promise<void>;
 }
 
 export interface ProfilesRepositoryPort {

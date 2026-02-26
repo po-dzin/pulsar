@@ -14,12 +14,12 @@ export const requireAdminRole = async (supabase: SupabaseClient, userId: string)
     .from("admin_roles")
     .select("role")
     .eq("user_id", userId)
-    .in("role", ["admin", "editor"])
+    .eq("role", "admin")
     .limit(1);
 
   if (error || !data || data.length === 0) {
     throw new Error("Forbidden");
   }
 
-  return data[0].role as "admin" | "editor";
+  return "admin" as const;
 };

@@ -1,15 +1,17 @@
 import { NextResponse } from "next/server";
-import { getPsychoHistoryUseCase } from "@/application/diagnostics/usecases/getPsychoHistory";
 import { createRuntime } from "@/infrastructure/repositories/factory/createRuntime";
 import { requireAuthenticatedUser } from "@/infrastructure/supabase/authz";
+import type { TestType } from "@/domain/psychosomatic/model";
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
+    const url = new URL(request.url);
+    const testTypeParam = url.searchParams.get("testType");
+    const testType = testTypeParam ? (testTypeParam as TestType) : undefined;
+
     const runtime = await createRuntime();
     const user = await requireAuthenticatedUser(runtime.supabase);
-
-    const execute = getPsychoHistoryUseCase(runtime.diagnosticsRepo);
-    const history = await execute(user.id);
+    const history = await runtime.diagnosticsRepo.listResultsByUser(user.id, testType);
 
     return NextResponse.json({ ok: true, history });
   } catch (error) {

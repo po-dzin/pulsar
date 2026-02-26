@@ -44,7 +44,10 @@ export const UserMenu = ({
         const supabase = getSupabaseBrowserClient();
         const nextPath = `${window.location.pathname}${window.location.search}`;
         const redirectTo = `${window.location.origin}/auth/callback?next=${encodeURIComponent(nextPath)}`;
-        await supabase.auth.signInWithOAuth({ provider: "google", options: { redirectTo } });
+        await supabase.auth.signInWithOAuth({
+            provider: "google",
+            options: { redirectTo, queryParams: { prompt: "select_account" } },
+        });
         setBusy(false);
     };
 
@@ -62,7 +65,6 @@ export const UserMenu = ({
                 className="button button-accent"
                 onClick={signIn}
                 disabled={busy}
-                data-testid="google-auth-button"
             >
                 {loginLabel}
             </button>
@@ -93,6 +95,7 @@ export const UserMenu = ({
                         height={38}
                         className="avatar-img"
                         referrerPolicy="no-referrer"
+                        suppressHydrationWarning
                     />
                 ) : (
                     <span className="avatar-initials">{initials}</span>

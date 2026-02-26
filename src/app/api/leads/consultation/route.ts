@@ -14,6 +14,12 @@ export async function POST(request: Request) {
 
     const runtime = await createRuntime();
     const user = await requireAuthenticatedUser(runtime.supabase);
+    await runtime.profilesRepo.upsertProfile({
+      id: user.id,
+      email: user.email ?? "",
+      fullName: user.user_metadata?.full_name ?? user.user_metadata?.name ?? null,
+      locale: user.user_metadata?.locale === "en" ? "en" : "ru",
+    });
 
     const execute = createConsultationLeadUseCase(runtime.leadsRepo, runtime.analytics);
     const lead = await execute({

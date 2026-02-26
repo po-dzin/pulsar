@@ -22,6 +22,9 @@ export default async function ProductsPage({
     >
       <h1 className="page-title">{context.dictionary.products.title}</h1>
       <p className="page-subtitle">{context.dictionary.products.subtitle}</p>
+      <a href="#consultation-request" className="button button-primary" data-testid="products-primary-cta">
+        {context.locale === "ru" ? "Оставить заявку" : "Send request"}
+      </a>
 
       <div className="grid cols-3">
         {defaultProducts.map((product) => (
@@ -41,6 +44,8 @@ export default async function ProductsPage({
             message: context.dictionary.products.consultMessage,
             submit: context.dictionary.products.consultSubmit,
             success: context.dictionary.products.consultSuccess,
+            authRequired: context.dictionary.products.consultAuthRequired,
+            error: context.dictionary.products.consultError,
           }}
         />
       </div>

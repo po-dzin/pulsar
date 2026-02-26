@@ -42,7 +42,6 @@ export const AuthControls = ({ isAuthenticated, loginLabel, logoutLabel }: Props
       className="button button-accent"
       onClick={signIn}
       disabled={busy}
-      data-testid="google-auth-button"
     >
       {loginLabel}
     </button>

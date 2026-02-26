@@ -7,15 +7,20 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 
 type AdminRoleDbRow = {
   user_id: string;
-  role: AdminRole;
+  role: string;
   created_at: string;
 };
 
-const mapRole = (row: AdminRoleDbRow): AdminRoleRow => ({
+const mapRole = (row: AdminRoleDbRow): AdminRoleRow | null => {
+  if (row.role !== "admin") {
+    return null;
+  }
+  return {
   userId: row.user_id,
-  role: row.role,
+  role: "admin",
   createdAt: row.created_at,
-});
+  };
+};
 
 export class SupabaseAdminRolesRepository implements AdminRolesRepositoryPort {
   constructor(private readonly supabase: SupabaseClient) {}
@@ -26,7 +31,7 @@ export class SupabaseAdminRolesRepository implements AdminRolesRepositoryPort {
       throw error;
     }
 
-    return ((data ?? []) as AdminRoleDbRow[]).map(mapRole);
+    return ((data ?? []) as AdminRoleDbRow[]).map(mapRole).filter((row): row is AdminRoleRow => row !== null);
   }
 
   async upsertRole(userId: string, role: AdminRole): Promise<void> {

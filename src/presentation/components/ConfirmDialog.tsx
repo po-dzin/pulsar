@@ -38,6 +38,7 @@ export const ConfirmDialog = ({
             role="dialog"
             aria-modal="true"
             aria-labelledby="confirm-title"
+            data-testid="confirm-dialog"
             onClick={(e) => {
                 if (e.target === e.currentTarget) onCancel();
             }}
@@ -50,6 +51,7 @@ export const ConfirmDialog = ({
                         type="button"
                         className="button button-muted"
                         onClick={onCancel}
+                        data-testid="confirm-dialog-cancel"
                     >
                         {cancelLabel}
                     </button>
@@ -57,6 +59,7 @@ export const ConfirmDialog = ({
                         type="button"
                         className={`button ${danger ? "button-danger" : "button-primary"}`}
                         onClick={onConfirm}
+                        data-testid="confirm-dialog-confirm"
                     >
                         {confirmLabel}
                     </button>

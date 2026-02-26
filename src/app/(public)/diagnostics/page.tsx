@@ -42,7 +42,6 @@ export default async function DiagnosticsPage({
       displayName={context.displayName}
     >
       <h1 className="page-title">{context.dictionary.diagnostics.title}</h1>
-      <p className="page-subtitle">{context.dictionary.diagnostics.subtitle}</p>
 
       <DiagnosticsFlow
         isAuthenticated={Boolean(context.userId)}

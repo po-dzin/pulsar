@@ -1,5 +1,7 @@
 import { getViewContext } from "@/presentation/i18n/getViewContext";
 import { PageScaffold } from "@/presentation/components/PageScaffold";
+import Link from "next/link";
+import { withLang } from "@/presentation/components/LocaleLinks";
 
 export default async function AboutPage({
   searchParams,
@@ -35,6 +37,11 @@ export default async function AboutPage({
             <li>{context.dictionary.about.roleBody3}</li>
             <li>{context.dictionary.about.roleBody4}</li>
           </ul>
+          <div style={{ marginTop: "1.25rem" }}>
+            <Link href={withLang("/diagnostics", context.locale)} className="button button-primary">
+              {context.locale === "ru" ? "Пройти диагностику" : "Start diagnostics"}
+            </Link>
+          </div>
         </section>
       </div>
     </PageScaffold>
