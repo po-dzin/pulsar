@@ -35,9 +35,6 @@ export default async function KnowledgePage({
     >
       <h1 className="page-title">{context.dictionary.knowledge.title}</h1>
       <p className="page-subtitle">{context.dictionary.knowledge.subtitle}</p>
-      <Link href={withLang("/diagnostics", context.locale)} className="button button-primary" data-testid="knowledge-primary-cta">
-        {context.locale === "ru" ? "Пройти диагностику" : "Start diagnostics"}
-      </Link>
 
       <div className="test-selector" style={{ marginTop: "var(--space-4)" }}>
         <Link

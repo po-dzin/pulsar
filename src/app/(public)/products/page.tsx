@@ -1,7 +1,7 @@
 import { getViewContext } from "@/presentation/i18n/getViewContext";
 import { PageScaffold } from "@/presentation/components/PageScaffold";
 import { defaultProducts } from "@/presentation/content/defaultData";
-import { ConsultationForm } from "@/presentation/components/ConsultationForm";
+import { ProductsRequestPanel } from "@/presentation/components/ProductsRequestPanel";
 
 export default async function ProductsPage({
   searchParams,
@@ -22,9 +22,6 @@ export default async function ProductsPage({
     >
       <h1 className="page-title">{context.dictionary.products.title}</h1>
       <p className="page-subtitle">{context.dictionary.products.subtitle}</p>
-      <a href="#consultation-request" className="button button-primary" data-testid="products-primary-cta">
-        {context.locale === "ru" ? "Оставить заявку" : "Send request"}
-      </a>
 
       <div className="grid cols-3">
         {defaultProducts.map((product) => (
@@ -35,20 +32,24 @@ export default async function ProductsPage({
         ))}
       </div>
 
-      <div style={{ marginTop: 'var(--space-4)' }}>
-        <ConsultationForm
-          labels={{
-            title: context.dictionary.products.consultTitle,
-            name: context.dictionary.products.consultName,
-            contact: context.dictionary.products.consultContact,
-            message: context.dictionary.products.consultMessage,
-            submit: context.dictionary.products.consultSubmit,
-            success: context.dictionary.products.consultSuccess,
-            authRequired: context.dictionary.products.consultAuthRequired,
-            error: context.dictionary.products.consultError,
-          }}
-        />
-      </div>
+      <ProductsRequestPanel
+        isAuthenticated={Boolean(context.userId)}
+        labels={{
+          requestButton: context.dictionary.products.consultSubmit,
+          signInButton: context.dictionary.auth.google,
+          signInHint: Boolean(context.userId)
+            ? (context.locale === "ru" ? "Отправь заявку через форму в модальном окне." : "Submit your request through the modal form.")
+            : context.dictionary.products.consultAuthRequired,
+          modalTitle: context.dictionary.products.consultTitle,
+          name: context.dictionary.products.consultName,
+          contact: context.dictionary.products.consultContact,
+          message: context.dictionary.products.consultMessage,
+          submit: context.dictionary.products.consultSubmit,
+          cancel: context.locale === "ru" ? "Отмена" : "Cancel",
+          success: context.dictionary.products.consultSuccess,
+          error: context.dictionary.products.consultError,
+        }}
+      />
     </PageScaffold>
   );
 }

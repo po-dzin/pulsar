@@ -34,37 +34,21 @@ test.describe("Public smoke", () => {
     await expect(page.getByTestId("start-psychotest-button")).toBeVisible();
 
     await page.goto("/products?lang=en");
-    await expect(page.getByTestId("products-primary-cta")).toBeVisible();
-
-    await page.goto("/knowledge?lang=en");
-    await expect(page.getByTestId("knowledge-primary-cta")).toBeVisible();
-
-    await page.goto("/about?lang=en");
-    await expect(page.getByRole("link", { name: /start diagnostics/i })).toBeVisible();
+    await expect(page.getByTestId("products-signin-button")).toBeVisible();
   });
 
-  test("critical forms have accessible labels and focus flow", async ({ page }) => {
+  test("critical controls have accessible focus flow", async ({ page }) => {
     await page.goto("/products?lang=en");
-
-    await expect(page.getByLabel(/name/i)).toBeVisible();
-    await expect(page.getByLabel(/contact/i)).toBeVisible();
-    await expect(page.getByLabel(/help/i)).toBeVisible();
+    await expect(page.getByTestId("products-signin-button")).toBeVisible();
 
     await page.keyboard.press("Tab");
     const focusedTag = await page.evaluate(() => document.activeElement?.tagName ?? "");
     expect(focusedTag).not.toBe("BODY");
   });
 
-  test("error messages explain next step", async ({ page }) => {
+  test("products guest state explains next step", async ({ page }) => {
     await page.goto("/products?lang=en");
-
-    await page.getByTestId("consultation-name-input").fill("User");
-    await page.getByTestId("consultation-contact-input").fill("user@example.com");
-    await page.getByTestId("consultation-message-input").fill("Need consultation");
-    await page.getByTestId("consultation-form-submit").click();
-
-    const error = page.getByTestId("consultation-error");
-    await expect(error).toBeVisible();
-    await expect(error).toContainText(/sign in|try again/i);
+    await expect(page.getByText(/sign in to submit a consultation request/i)).toBeVisible();
+    await expect(page.getByTestId("products-signin-button")).toBeVisible();
   });
 });

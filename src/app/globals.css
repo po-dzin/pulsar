@@ -80,7 +80,7 @@ textarea {
   top: 0;
   z-index: 30;
   isolation: isolate;
-  overflow: hidden;
+  overflow: visible;
   background: color-mix(in srgb, var(--color-surface) 96%, transparent);
   border-bottom: 1px solid var(--color-divider);
 }
@@ -1264,6 +1264,7 @@ footer {
 .user-menu-wrapper {
   position: relative;
   flex-shrink: 0;
+  z-index: 80;
 }
 
 .avatar-btn {
@@ -1305,7 +1306,7 @@ footer {
   position: absolute;
   top: calc(100% + 10px);
   right: 0;
-  z-index: 200;
+  z-index: 240;
   min-width: 176px;
   background: var(--color-surface-strong);
   border: 1px solid var(--color-border);
