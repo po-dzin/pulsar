@@ -1,12 +1,13 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { ConfirmDialog } from "@/presentation/components/ConfirmDialog";
 import { AdminMobileCard } from "@/presentation/components/admin/AdminMobileCard";
 import { AdminPagination } from "@/presentation/components/admin/AdminPagination";
 import { AdminStatusBadge } from "@/presentation/components/admin/AdminStatusBadge";
 import { AdminTable } from "@/presentation/components/admin/AdminTable";
 import { AdminTableToolbar } from "@/presentation/components/admin/AdminTableToolbar";
+import { fetchAdminJson, isAbortError } from "@/presentation/components/admin/fetchAdminJson";
 import { useAdminToasts } from "@/presentation/components/admin/useAdminToasts";
 
 type RoleRow = {
@@ -45,6 +46,7 @@ export const AdminRolesPanel = () => {
   const [loading, setLoading] = useState(false);
   const [grantEmail, setGrantEmail] = useState("");
   const [confirmUser, setConfirmUser] = useState<RoleRow | null>(null);
+  const loadRequestIdRef = useRef(0);
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
@@ -55,7 +57,8 @@ export const AdminRolesPanel = () => {
     return () => window.clearTimeout(timer);
   }, [searchInput]);
 
-  const load = async () => {
+  const load = useCallback(async (signal?: AbortSignal) => {
+    const requestId = ++loadRequestIdRef.current;
     setLoading(true);
     const params = new URLSearchParams({
       page: String(page),
@@ -66,26 +69,39 @@ export const AdminRolesPanel = () => {
     if (search) params.set("search", search);
 
     try {
-      const response = await fetch(`/api/admin/roles?${params.toString()}`).then((res) => res.json());
+      const response = await fetchAdminJson<RolesResponse>(
+        `/api/admin/roles?${params.toString()}`,
+        { signal },
+        "Failed to load roles."
+      );
+      if (requestId !== loadRequestIdRef.current) {
+        return;
+      }
       setData({
         rows: response.rows ?? [],
         meta: response.meta ?? { page: 1, pageSize: 20, total: 0, totalPages: 1 },
       });
-    } catch {
+    } catch (error) {
+      if (isAbortError(error)) {
+        return;
+      }
       pushToast({
         type: "error",
         title: "Roles",
         message: "Failed to load roles.",
       });
     } finally {
-      setLoading(false);
+      if (requestId === loadRequestIdRef.current) {
+        setLoading(false);
+      }
     }
-  };
+  }, [page, search, sortBy, sortDir, pushToast]);
 
   useEffect(() => {
-    void load();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [page, search, sortBy, sortDir]);
+    const controller = new AbortController();
+    void load(controller.signal);
+    return () => controller.abort();
+  }, [load]);
 
   const grantAdmin = async () => {
     if (!grantEmail.trim()) {
@@ -237,19 +253,21 @@ export const AdminRolesPanel = () => {
                   <span className="muted admin-inline-note admin-cell-ellipsis">{formatDate(item.assignedAt)}</span>
                 </td>
                 <td>
-                  {item.role === "admin" ? (
-                    <button
-                      type="button"
-                      className="button button-danger admin-table-action-btn"
-                      onClick={() => setConfirmUser(item)}
-                      disabled={loading}
-                      data-testid={`revoke-role-button-${index}`}
-                    >
-                      Revoke
-                    </button>
-                  ) : (
-                    <span className="muted">—</span>
-                  )}
+                  <div className="admin-row-actions">
+                    {item.role === "admin" ? (
+                      <button
+                        type="button"
+                        className="button button-danger admin-table-action-btn"
+                        onClick={() => setConfirmUser(item)}
+                        disabled={loading}
+                        data-testid={`revoke-role-button-${index}`}
+                      >
+                        Revoke
+                      </button>
+                    ) : (
+                      <span className="muted">—</span>
+                    )}
+                  </div>
                 </td>
               </tr>
             ))}

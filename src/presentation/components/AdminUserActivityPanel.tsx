@@ -1,8 +1,9 @@
 "use client";
 
-import { Fragment, useEffect, useMemo, useState } from "react";
+import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AdminMobileCard } from "@/presentation/components/admin/AdminMobileCard";
 import { AdminPagination } from "@/presentation/components/admin/AdminPagination";
+import { fetchAdminJson, isAbortError } from "@/presentation/components/admin/fetchAdminJson";
 import { AdminRowExpand } from "@/presentation/components/admin/AdminRowExpand";
 import { AdminStatusBadge } from "@/presentation/components/admin/AdminStatusBadge";
 import { AdminTable } from "@/presentation/components/admin/AdminTable";
@@ -71,6 +72,7 @@ export const AdminUserActivityPanel = () => {
   const [expandedUserId, setExpandedUserId] = useState<string | null>(null);
   const [detailsByUserId, setDetailsByUserId] = useState<Record<string, UserActivityDetails>>({});
   const [detailsLoading, setDetailsLoading] = useState<Record<string, boolean>>({});
+  const loadRequestIdRef = useRef(0);
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
@@ -81,7 +83,8 @@ export const AdminUserActivityPanel = () => {
     return () => window.clearTimeout(timer);
   }, [searchInput]);
 
-  useEffect(() => {
+  const load = useCallback(async (signal?: AbortSignal) => {
+    const requestId = ++loadRequestIdRef.current;
     setLoading(true);
     const params = new URLSearchParams({
       page: String(page),
@@ -91,30 +94,51 @@ export const AdminUserActivityPanel = () => {
     });
     if (search) params.set("search", search);
 
-    fetch(`/api/admin/user-activity?${params.toString()}`)
-      .then((res) => res.json())
-      .then((response) => {
-        setData({
-          rows: response.rows ?? [],
-          meta: response.meta ?? { page: 1, pageSize: 20, total: 0, totalPages: 1 },
-        });
-      })
-      .catch(() => {
-        pushToast({
-          type: "error",
-          title: "Users",
-          message: "Failed to load users activity.",
-        });
-      })
-      .finally(() => setLoading(false));
-  }, [page, pushToast, search, sortBy, sortDir]);
+    try {
+      const response = await fetchAdminJson<PagedResponse>(
+        `/api/admin/user-activity?${params.toString()}`,
+        { signal },
+        "Failed to load users activity."
+      );
+      if (requestId !== loadRequestIdRef.current) {
+        return;
+      }
+      setData({
+        rows: response.rows ?? [],
+        meta: response.meta ?? { page: 1, pageSize: 20, total: 0, totalPages: 1 },
+      });
+    } catch (error) {
+      if (isAbortError(error)) {
+        return;
+      }
+      pushToast({
+        type: "error",
+        title: "Users",
+        message: "Failed to load users activity.",
+      });
+    } finally {
+      if (requestId === loadRequestIdRef.current) {
+        setLoading(false);
+      }
+    }
+  }, [page, search, sortBy, sortDir, pushToast]);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    void load(controller.signal);
+    return () => controller.abort();
+  }, [load]);
 
   const loadDetails = async (userId: string) => {
     if (detailsByUserId[userId]) return;
     setDetailsLoading((prev) => ({ ...prev, [userId]: true }));
 
     try {
-      const response = await fetch(`/api/admin/user-activity/${userId}/details?testsLimit=5&leadsLimit=5`).then((res) => res.json());
+      const response = await fetchAdminJson<UserActivityDetails>(
+        `/api/admin/user-activity/${userId}/details?testsLimit=5&leadsLimit=5`,
+        undefined,
+        "Failed to load user details."
+      );
       setDetailsByUserId((prev) => ({
         ...prev,
         [userId]: {
@@ -199,12 +223,14 @@ export const AdminUserActivityPanel = () => {
                   <td>{row.leadsCount}</td>
                   <td><span className="admin-cell-ellipsis">{formatDate(row.lastActivityAt)}</span></td>
                   <td>
-                    <AdminRowExpand
-                      expanded={expanded}
-                      onToggle={() => void toggleExpand(row.userId)}
-                      label="View"
-                      testId={`admin-user-row-expand-${index}`}
-                    />
+                    <div className="admin-row-actions">
+                      <AdminRowExpand
+                        expanded={expanded}
+                        onToggle={() => void toggleExpand(row.userId)}
+                        label="View"
+                        testId={`admin-user-row-expand-${index}`}
+                      />
+                    </div>
                   </td>
                 </tr>
                 {expanded ? (

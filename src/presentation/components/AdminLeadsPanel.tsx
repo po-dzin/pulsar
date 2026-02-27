@@ -1,11 +1,12 @@
 "use client";
 
-import { Fragment, useEffect, useMemo, useState } from "react";
+import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AdminMobileCard } from "@/presentation/components/admin/AdminMobileCard";
 import { AdminPagination } from "@/presentation/components/admin/AdminPagination";
 import { AdminRowExpand } from "@/presentation/components/admin/AdminRowExpand";
 import { AdminTable } from "@/presentation/components/admin/AdminTable";
 import { AdminTableToolbar } from "@/presentation/components/admin/AdminTableToolbar";
+import { fetchAdminJson, isAbortError } from "@/presentation/components/admin/fetchAdminJson";
 import { useAdminToasts } from "@/presentation/components/admin/useAdminToasts";
 
 type Lead = {
@@ -47,7 +48,8 @@ export const AdminLeadsPanel = () => {
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(false);
   const [expandedLeadId, setExpandedLeadId] = useState<string | null>(null);
-  const [pendingStatuses, setPendingStatuses] = useState<Record<string, Lead["status"]>>({});
+  const [statusSavingById, setStatusSavingById] = useState<Record<string, boolean>>({});
+  const loadRequestIdRef = useRef(0);
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
@@ -58,7 +60,8 @@ export const AdminLeadsPanel = () => {
     return () => window.clearTimeout(timer);
   }, [searchInput]);
 
-  const load = async () => {
+  const load = useCallback(async (signal?: AbortSignal) => {
+    const requestId = ++loadRequestIdRef.current;
     setLoading(true);
     const params = new URLSearchParams({
       page: String(page),
@@ -70,29 +73,42 @@ export const AdminLeadsPanel = () => {
     if (search) params.set("search", search);
 
     try {
-      const response = await fetch(`/api/admin/leads?${params.toString()}`).then((res) => res.json());
+      const response = await fetchAdminJson<LeadsResponse>(
+        `/api/admin/leads?${params.toString()}`,
+        { signal },
+        "Failed to load leads."
+      );
+      if (requestId !== loadRequestIdRef.current) {
+        return;
+      }
       setData({
         rows: response.rows ?? [],
         meta: response.meta ?? { page: 1, pageSize: 20, total: 0, totalPages: 1 },
       });
-      setPendingStatuses({});
-    } catch {
+    } catch (error) {
+      if (isAbortError(error)) {
+        return;
+      }
       pushToast({
         type: "error",
         title: "Leads",
         message: "Failed to load leads.",
       });
     } finally {
-      setLoading(false);
+      if (requestId === loadRequestIdRef.current) {
+        setLoading(false);
+      }
     }
-  };
+  }, [page, search, sortBy, sortDir, statusFilter, pushToast]);
 
   useEffect(() => {
-    void load();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [page, search, sortBy, sortDir, statusFilter]);
+    const controller = new AbortController();
+    void load(controller.signal);
+    return () => controller.abort();
+  }, [load]);
 
   const updateStatus = async (id: string, status: Lead["status"]) => {
+    setStatusSavingById((prev) => ({ ...prev, [id]: true }));
     try {
       const response = await fetch(`/api/admin/leads/${id}/status`, {
         method: "PATCH",
@@ -120,6 +136,8 @@ export const AdminLeadsPanel = () => {
         title: "Leads",
         message: "Failed to update lead status.",
       });
+    } finally {
+      setStatusSavingById((prev) => ({ ...prev, [id]: false }));
     }
   };
 
@@ -173,7 +191,7 @@ export const AdminLeadsPanel = () => {
         >
           {rows.map((lead, index) => {
             const expanded = expandedLeadId === lead.id;
-            const pendingStatus = pendingStatuses[lead.id] ?? lead.status;
+            const isStatusSaving = Boolean(statusSavingById[lead.id]);
 
             return (
               <Fragment key={lead.id}>
@@ -184,10 +202,9 @@ export const AdminLeadsPanel = () => {
                   <td>
                     <select
                       className="select admin-table-control"
-                      value={pendingStatus}
-                      onChange={(event) =>
-                        setPendingStatuses((prev) => ({ ...prev, [lead.id]: event.target.value as Lead["status"] }))
-                      }
+                      value={lead.status}
+                      onChange={(event) => void updateStatus(lead.id, event.target.value as Lead["status"])}
+                      disabled={loading || isStatusSaving}
                       data-testid={`lead-status-select-${index}`}
                     >
                       <option value="new">new</option>
@@ -199,14 +216,6 @@ export const AdminLeadsPanel = () => {
                   <td><span className="admin-cell-ellipsis">{formatDate(lead.updatedAt)}</span></td>
                   <td>
                     <div className="admin-row-actions">
-                      <button
-                        type="button"
-                        className="button button-primary admin-table-action-btn"
-                        onClick={() => void updateStatus(lead.id, pendingStatus)}
-                        data-testid={`lead-status-save-${index}`}
-                      >
-                        Save
-                      </button>
                       <AdminRowExpand
                         expanded={expanded}
                         onToggle={() => setExpandedLeadId((prev) => (prev === lead.id ? null : lead.id))}
@@ -234,7 +243,7 @@ export const AdminLeadsPanel = () => {
         <div className="admin-mobile-list">
           {rows.map((lead, index) => {
             const expanded = expandedLeadId === lead.id;
-            const pendingStatus = pendingStatuses[lead.id] ?? lead.status;
+            const isStatusSaving = Boolean(statusSavingById[lead.id]);
 
             return (
               <AdminMobileCard
@@ -249,8 +258,9 @@ export const AdminLeadsPanel = () => {
                 <div className="admin-mobile-inline">
                   <select
                     className="select admin-table-control"
-                    value={pendingStatus}
-                    onChange={(event) => setPendingStatuses((prev) => ({ ...prev, [lead.id]: event.target.value as Lead["status"] }))}
+                    value={lead.status}
+                    onChange={(event) => void updateStatus(lead.id, event.target.value as Lead["status"])}
+                    disabled={loading || isStatusSaving}
                     data-testid={`lead-status-select-mobile-${index}`}
                   >
                     <option value="new">new</option>
@@ -258,13 +268,6 @@ export const AdminLeadsPanel = () => {
                     <option value="done">done</option>
                     <option value="archived">archived</option>
                   </select>
-                  <button
-                    type="button"
-                    className="button button-primary admin-table-action-btn"
-                    onClick={() => void updateStatus(lead.id, pendingStatus)}
-                  >
-                    Save
-                  </button>
                 </div>
               </AdminMobileCard>
             );

@@ -24,6 +24,19 @@ test.describe("Admin KB content CRUD", () => {
     await page.getByTestId("admin-kb-category-save-button").click();
     await expect(page.getByTestId("admin-toast").filter({ hasText: "Category created" })).toBeVisible();
 
+    const extraCategorySlug = `e2e-kb-cat-alt-${stamp}`;
+    await page.getByTestId("admin-kb-category-slug-input").fill(extraCategorySlug);
+    await page.getByTestId("admin-kb-category-title-ru-input").fill(`${categoryTitleRu} Alt`);
+    await page.getByTestId("admin-kb-category-title-en-input").fill(`${categoryTitleEn} Alt`);
+    await page.getByTestId("admin-kb-category-save-button").click();
+    await expect(page.getByTestId("admin-toast").filter({ hasText: "Category created" })).toBeVisible();
+
+    const createdCategoryRow = page.locator("[data-testid^='admin-kb-category-row-']").filter({ hasText: categorySlug }).first();
+    await createdCategoryRow.getByRole("button", { name: "Move category up" }).click();
+    await expect(page.getByTestId("admin-toast").filter({ hasText: "Category order updated" })).toBeVisible();
+    await createdCategoryRow.getByRole("button", { name: "Move category down" }).click();
+    await expect(page.getByTestId("admin-toast").filter({ hasText: "Category order updated" })).toBeVisible();
+
     await page.getByTestId("admin-kb-tab-articles").click();
     await page.getByTestId("admin-kb-new-article-button").click();
     await expect(page.getByTestId("admin-kb-editor")).toBeVisible();
@@ -61,6 +74,10 @@ test.describe("Admin KB content CRUD", () => {
     await expect(page.getByTestId("knowledge-article-content")).toContainText("Updated EN content");
 
     await page.goto("/admin/content?lang=en");
+    const articleStatusSelect = page.getByTestId("admin-kb-article-status-select-0");
+    await articleStatusSelect.selectOption("published");
+    await expect(page.getByTestId("admin-toast").filter({ hasText: "Article status updated" })).toBeVisible();
+
     const deletedRow = page.locator("[data-testid^='admin-kb-article-row-']").filter({ hasText: articleTitleEn }).first();
     await deletedRow.getByRole("button", { name: "Delete" }).click();
     await page.getByTestId("confirm-dialog-confirm").click();

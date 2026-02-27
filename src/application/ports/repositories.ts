@@ -182,6 +182,7 @@ export interface KbRepositoryPort {
   getCategoryById(id: string): Promise<KbCategoryRow | null>;
   createCategory(input: KbCategoryInput): Promise<KbCategoryRow>;
   updateCategory(id: string, updates: KbCategoryUpdate): Promise<KbCategoryRow>;
+  swapCategorySortOrder(firstCategoryId: string, secondCategoryId: string): Promise<void>;
   /** @deprecated Use deleteCategory for hard-delete flows. */
   archiveCategory(id: string): Promise<void>;
   deleteCategory(id: string): Promise<void>;

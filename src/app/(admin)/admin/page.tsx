@@ -26,9 +26,9 @@ export default async function AdminPage({
 
   return (
     <div className="admin-page-inner">
-      <h1 className="page-title" style={{ fontSize: "clamp(1.6rem, 3vw, 2.8rem)" }}>Admin</h1>
+      <h1 className="page-title admin-page-title">Admin</h1>
       {!allowed ? (
-        <section className="card" style={{ marginTop: "var(--space-4)" }}>
+        <section className="card admin-access-card">
           <p className="muted">Admin role is required to access this panel.</p>
         </section>
       ) : (
