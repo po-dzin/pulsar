@@ -2,10 +2,12 @@
 
 import { Fragment, useEffect, useMemo, useState } from "react";
 import { AdminMobileCard } from "@/presentation/components/admin/AdminMobileCard";
+import { AdminPagination } from "@/presentation/components/admin/AdminPagination";
 import { AdminRowExpand } from "@/presentation/components/admin/AdminRowExpand";
 import { AdminStatusBadge } from "@/presentation/components/admin/AdminStatusBadge";
 import { AdminTable } from "@/presentation/components/admin/AdminTable";
 import { AdminTableToolbar } from "@/presentation/components/admin/AdminTableToolbar";
+import { useAdminToasts } from "@/presentation/components/admin/useAdminToasts";
 
 type UserActivityRow = {
   userId: string;
@@ -54,6 +56,8 @@ const formatDate = (value: string | null) => {
 };
 
 export const AdminUserActivityPanel = () => {
+  const { pushToast } = useAdminToasts();
+
   const [data, setData] = useState<PagedResponse>({
     rows: [],
     meta: { page: 1, pageSize: 20, total: 0, totalPages: 1 },
@@ -95,21 +99,38 @@ export const AdminUserActivityPanel = () => {
           meta: response.meta ?? { page: 1, pageSize: 20, total: 0, totalPages: 1 },
         });
       })
+      .catch(() => {
+        pushToast({
+          type: "error",
+          title: "Users",
+          message: "Failed to load users activity.",
+        });
+      })
       .finally(() => setLoading(false));
-  }, [page, search, sortBy, sortDir]);
+  }, [page, pushToast, search, sortBy, sortDir]);
 
   const loadDetails = async (userId: string) => {
     if (detailsByUserId[userId]) return;
     setDetailsLoading((prev) => ({ ...prev, [userId]: true }));
-    const response = await fetch(`/api/admin/user-activity/${userId}/details?testsLimit=5&leadsLimit=5`).then((res) => res.json());
-    setDetailsByUserId((prev) => ({
-      ...prev,
-      [userId]: {
-        tests: response.tests ?? [],
-        leads: response.leads ?? [],
-      },
-    }));
-    setDetailsLoading((prev) => ({ ...prev, [userId]: false }));
+
+    try {
+      const response = await fetch(`/api/admin/user-activity/${userId}/details?testsLimit=5&leadsLimit=5`).then((res) => res.json());
+      setDetailsByUserId((prev) => ({
+        ...prev,
+        [userId]: {
+          tests: response.tests ?? [],
+          leads: response.leads ?? [],
+        },
+      }));
+    } catch {
+      pushToast({
+        type: "error",
+        title: "Users",
+        message: "Failed to load user details.",
+      });
+    } finally {
+      setDetailsLoading((prev) => ({ ...prev, [userId]: false }));
+    }
   };
 
   const toggleExpand = async (userId: string) => {
@@ -169,16 +190,21 @@ export const AdminUserActivityPanel = () => {
             return (
               <Fragment key={row.userId}>
                 <tr data-testid={`admin-user-activity-row-${index}`}>
-                  <td>{row.fullName ?? "User"}</td>
-                  <td>{row.email}</td>
+                  <td><span className="admin-cell-ellipsis">{row.fullName ?? "User"}</span></td>
+                  <td><span className="admin-cell-ellipsis">{row.email}</span></td>
                   <td>
                     <AdminStatusBadge label={row.locale.toUpperCase()} tone="info" />
                   </td>
                   <td>{row.testsCount}</td>
                   <td>{row.leadsCount}</td>
-                  <td>{formatDate(row.lastActivityAt)}</td>
+                  <td><span className="admin-cell-ellipsis">{formatDate(row.lastActivityAt)}</span></td>
                   <td>
-                    <AdminRowExpand expanded={expanded} onToggle={() => void toggleExpand(row.userId)} label="View" />
+                    <AdminRowExpand
+                      expanded={expanded}
+                      onToggle={() => void toggleExpand(row.userId)}
+                      label="View"
+                      testId={`admin-user-row-expand-${index}`}
+                    />
                   </td>
                 </tr>
                 {expanded ? (
@@ -194,7 +220,7 @@ export const AdminUserActivityPanel = () => {
                               <ul className="admin-details-list">
                                 {details.tests.map((test) => (
                                   <li key={test.id}>
-                                    <span>{test.testType}</span>
+                                    <span className="admin-cell-ellipsis">{test.testType}</span>
                                     <strong>{test.overallPct}%</strong>
                                     <span className="muted">{formatDate(test.createdAt)}</span>
                                   </li>
@@ -211,7 +237,7 @@ export const AdminUserActivityPanel = () => {
                               <ul className="admin-details-list">
                                 {details.leads.map((lead) => (
                                   <li key={lead.id}>
-                                    <span>{lead.name}</span>
+                                    <span className="admin-cell-ellipsis">{lead.name}</span>
                                     <span className="muted">{lead.status}</span>
                                     <span className="muted">{formatDate(lead.createdAt)}</span>
                                   </li>
@@ -262,7 +288,7 @@ export const AdminUserActivityPanel = () => {
                       <ul className="admin-details-list">
                         {details.tests.map((test) => (
                           <li key={test.id}>
-                            <span>{test.testType}</span>
+                            <span className="admin-cell-ellipsis">{test.testType}</span>
                             <strong>{test.overallPct}%</strong>
                           </li>
                         ))}
@@ -275,8 +301,8 @@ export const AdminUserActivityPanel = () => {
                       <ul className="admin-details-list">
                         {details.leads.map((lead) => (
                           <li key={lead.id}>
-                            <span>{lead.name}</span>
-                            <span className="muted">{lead.message}</span>
+                            <span className="admin-cell-ellipsis">{lead.name}</span>
+                            <span className="muted admin-cell-ellipsis">{lead.message}</span>
                           </li>
                         ))}
                       </ul>
@@ -292,20 +318,13 @@ export const AdminUserActivityPanel = () => {
         </div>
       </div>
 
-      <div className="admin-pagination">
-        <button type="button" className="button button-muted" onClick={() => setPage((value) => Math.max(1, value - 1))} disabled={data.meta.page <= 1 || loading}>
-          Previous
-        </button>
-        <span className="muted">Page {data.meta.page} / {data.meta.totalPages}</span>
-        <button
-          type="button"
-          className="button button-muted"
-          onClick={() => setPage((value) => Math.min(data.meta.totalPages, value + 1))}
-          disabled={data.meta.page >= data.meta.totalPages || loading}
-        >
-          Next
-        </button>
-      </div>
+      <AdminPagination
+        page={data.meta.page}
+        totalPages={data.meta.totalPages}
+        disabled={loading}
+        onPrev={() => setPage((value) => Math.max(1, value - 1))}
+        onNext={() => setPage((value) => Math.min(data.meta.totalPages, value + 1))}
+      />
     </section>
   );
 };

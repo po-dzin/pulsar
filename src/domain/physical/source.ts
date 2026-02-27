@@ -265,19 +265,19 @@ export const physicalTestFocus: Record<PhysicalTestKey, Record<Locale, string>> 
     en: "Ruffier: improve pulse recovery with moderate cardio.",
   },
   leg_swings: {
-    ru: "Leg Swings: отслеживай пульс и избегай хронической работы в зоне 5.",
+    ru: "Махи ногами: отслеживай пульс и избегай хронической работы в зоне 5.",
     en: "Leg Swings: monitor pulse and avoid chronic zone 5 work.",
   },
   plank: {
-    ru: "Plank: укрепляй кор и антиразгибание корпуса.",
+    ru: "Планка: укрепляй кор и антиразгибание корпуса.",
     en: "Plank: build core anti-extension strength.",
   },
   wall_sit: {
-    ru: "Wall Sit: постепенно увеличивай время изометрии ног.",
+    ru: "Присед у стены: постепенно увеличивай время изометрии ног.",
     en: "Wall Sit: gradually increase lower-body isometric time.",
   },
   forward_bend: {
-    ru: "Forward Bend: добавь мягкую заднюю линию и регулярную растяжку.",
+    ru: "Наклон вперед: добавь мягкую заднюю линию и регулярную растяжку.",
     en: "Forward Bend: improve posterior-chain mobility with regular stretching.",
   },
   shoulders_lock: {

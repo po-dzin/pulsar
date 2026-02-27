@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import Link from "next/link";
+import { AdminToastProvider } from "@/presentation/components/admin/AdminToastProvider";
 
 export default function AdminLayout({ children }: { children: ReactNode }) {
     return (
@@ -13,7 +14,9 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
             </header>
 
             <main className="admin-main">
-                {children}
+                <AdminToastProvider>
+                    {children}
+                </AdminToastProvider>
             </main>
         </div>
     );

@@ -21,9 +21,8 @@ test.describe("Admin KB content CRUD", () => {
     await page.getByTestId("admin-kb-category-slug-input").fill(categorySlug);
     await page.getByTestId("admin-kb-category-title-ru-input").fill(categoryTitleRu);
     await page.getByTestId("admin-kb-category-title-en-input").fill(categoryTitleEn);
-    await page.getByTestId("admin-kb-category-sort-input").fill("900");
     await page.getByTestId("admin-kb-category-save-button").click();
-    await expect(page.getByTestId("admin-kb-status")).toContainText("Category created");
+    await expect(page.getByTestId("admin-toast").filter({ hasText: "Category created" })).toBeVisible();
 
     await page.getByTestId("admin-kb-tab-articles").click();
     await page.getByTestId("admin-kb-new-article-button").click();
@@ -45,7 +44,7 @@ test.describe("Admin KB content CRUD", () => {
 
     await page.getByTestId("admin-kb-article-publish-select").selectOption("true");
     await page.getByTestId("admin-kb-article-save-button").click();
-    await expect(page.getByTestId("admin-kb-status")).toContainText("Article created");
+    await expect(page.getByTestId("admin-toast").filter({ hasText: "Article created" })).toBeVisible();
 
     const row = page.locator("[data-testid^='admin-kb-article-row-']").filter({ hasText: articleTitleEn }).first();
     await expect(row).toBeVisible();
@@ -54,7 +53,7 @@ test.describe("Admin KB content CRUD", () => {
     await page.getByTestId("admin-kb-editor-locale-en").click();
     await page.getByTestId("admin-kb-article-content-en-input").fill(`# ${articleTitleEn}\n\nUpdated EN content.`);
     await page.getByTestId("admin-kb-article-save-button").click();
-    await expect(page.getByTestId("admin-kb-status")).toContainText("Article updated");
+    await expect(page.getByTestId("admin-toast").filter({ hasText: "Article updated" })).toBeVisible();
 
     await page.goto("/knowledge?lang=en");
     await page.getByTestId(`knowledge-card-${articleSlug}`).click();
@@ -65,7 +64,7 @@ test.describe("Admin KB content CRUD", () => {
     const deletedRow = page.locator("[data-testid^='admin-kb-article-row-']").filter({ hasText: articleTitleEn }).first();
     await deletedRow.getByRole("button", { name: "Delete" }).click();
     await page.getByTestId("confirm-dialog-confirm").click();
-    await expect(page.getByTestId("admin-kb-status")).toContainText("Article deleted");
+    await expect(page.getByTestId("admin-toast").filter({ hasText: "Article deleted" })).toBeVisible();
 
     await page.goto("/knowledge?lang=en");
     await expect(page.getByTestId(`knowledge-card-${articleSlug}`)).toHaveCount(0);

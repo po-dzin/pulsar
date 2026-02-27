@@ -146,19 +146,19 @@ const perTestInterpretationBlock = (
         en: `💪 Ruffier index: ${ruffierIndex.toFixed(2)} → ${markRuffier.emoji} ${markRuffier.en} (<3 / 3-6 / 6-10 / >10).`,
       },
       {
-        ru: `💪 Leg Swings: ${legSwingsBpm} BPM (${legSwingsPct.toFixed(1)}% от макс. ${legSwingsMaxHr}) → ${markLegSwings.emoji} ${markLegSwings.ru}.`,
+        ru: `💪 Махи ногами: ${legSwingsBpm} BPM (${legSwingsPct.toFixed(1)}% от макс. ${legSwingsMaxHr}) → ${markLegSwings.emoji} ${markLegSwings.ru}.`,
         en: `💪 Leg Swings: ${legSwingsBpm} BPM (${legSwingsPct.toFixed(1)}% of max ${legSwingsMaxHr}) → ${markLegSwings.emoji} ${markLegSwings.en}.`,
       },
       {
-        ru: `🔥 Plank: ${plank} сек → ${markPlank.emoji} ${markPlank.ru} (<30 / 30-60 / 61-120 / >120).`,
+        ru: `🔥 Планка: ${plank} сек → ${markPlank.emoji} ${markPlank.ru} (<30 / 30-60 / 61-120 / >120).`,
         en: `🔥 Plank: ${plank}s → ${markPlank.emoji} ${markPlank.en} (<30 / 30-60 / 61-120 / >120).`,
       },
       {
-        ru: `🔥 Wall Sit: ${wallSit} сек → ${markWallSit.emoji} ${markWallSit.ru} (<30 / 31-60 / 61-120 / >120).`,
+        ru: `🔥 Присед у стены: ${wallSit} сек → ${markWallSit.emoji} ${markWallSit.ru} (<30 / 31-60 / 61-120 / >120).`,
         en: `🔥 Wall Sit: ${wallSit}s → ${markWallSit.emoji} ${markWallSit.en} (<30 / 31-60 / 61-120 / >120).`,
       },
       {
-        ru: `🤸 Forward Bend: уровень ${forwardBendLevel} (${forwardBendDesc.ru}) → ${markForwardBend.emoji} ${markForwardBend.ru}.`,
+        ru: `🤸 Наклон вперед: уровень ${forwardBendLevel} (${forwardBendDesc.ru}) → ${markForwardBend.emoji} ${markForwardBend.ru}.`,
         en: `🤸 Forward Bend: level ${forwardBendLevel} (${forwardBendDesc.en}) → ${markForwardBend.emoji} ${markForwardBend.en}.`,
       },
       {
