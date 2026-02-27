@@ -18,12 +18,13 @@ test.describe("Public smoke", () => {
     await expect(page.getByText(/не (является )?медицин|not a medical diagnosis/i)).toBeVisible();
   });
 
-  test("diagnostics is accessible without auth; sign-in is optional for saving", async ({ page }) => {
+  test("diagnostics is accessible without auth and requires sign-in to start", async ({ page }) => {
     await page.goto("/diagnostics");
-    await expect(page.getByTestId("consent-checkbox")).toBeVisible();
-    await expect(page.getByTestId("start-psychotest-button")).toBeDisabled();
-    await page.getByTestId("consent-checkbox").check();
-    await expect(page.getByTestId("start-psychotest-button")).toBeEnabled();
+    await expect(page.getByTestId("start-psychotest-button")).toBeVisible();
+    await expect(page.getByTestId("consent-checkbox")).toHaveCount(0);
+    await expect(
+      page.getByText(/войдите в систему, чтобы начать тест\.?|sign in to start the test\.?/i)
+    ).toBeVisible();
   });
 
   test("each key screen has primary CTA in the first viewport", async ({ page }) => {
