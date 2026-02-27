@@ -6,6 +6,7 @@ import { AdminArticleEditor } from "@/presentation/components/AdminArticleEditor
 import { AdminMobileCard } from "@/presentation/components/admin/AdminMobileCard";
 import { AdminStatusBadge } from "@/presentation/components/admin/AdminStatusBadge";
 import { AdminTable } from "@/presentation/components/admin/AdminTable";
+import { useAdminToasts } from "@/presentation/components/admin/useAdminToasts";
 import type { KbArticleInput, KbArticleRow, KbCategoryInput, KbCategoryRow } from "@/application/ports/repositories";
 
 type Tab = "articles" | "categories";
@@ -29,22 +30,28 @@ const ensureOk = async (response: Response, fallbackMessage: string) => {
 
 const formatDate = (value: string | null) => (value ? new Date(value).toLocaleString() : "—");
 
+const ArrowIcon = ({ direction }: { direction: "up" | "down" }) => (
+  <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    {direction === "up" ? <polyline points="18 15 12 9 6 15" /> : <polyline points="6 9 12 15 18 9" />}
+  </svg>
+);
+
 export const AdminContentPanel = () => {
+  const { pushToast } = useAdminToasts();
+
   const [tab, setTab] = useState<Tab>("articles");
   const [categories, setCategories] = useState<KbCategoryRow[]>([]);
   const [articles, setArticles] = useState<KbArticleRow[]>([]);
   const [busy, setBusy] = useState(false);
-  const [status, setStatus] = useState<string | null>(null);
   const [confirmState, setConfirmState] = useState<ConfirmState>(null);
 
   const [editorMode, setEditorMode] = useState<"list" | "create" | "edit">("list");
   const [editingArticleId, setEditingArticleId] = useState<string | null>(null);
 
-  const [newCategory, setNewCategory] = useState<KbCategoryInput>({
+  const [newCategory, setNewCategory] = useState<Pick<KbCategoryInput, "slug" | "titleRu" | "titleEn">>({
     slug: "",
     titleRu: "",
     titleEn: "",
-    sortOrder: 100,
   });
 
   const load = useCallback(async () => {
@@ -62,27 +69,41 @@ export const AdminContentPanel = () => {
     load().catch(() => {
       setCategories([]);
       setArticles([]);
-      setStatus("Failed to load content data.");
+      pushToast({
+        type: "error",
+        title: "Content",
+        message: "Failed to load content data.",
+      });
     });
-  }, [load]);
+  }, [load, pushToast]);
 
   const categoryById = useMemo(() => new Map(categories.map((category) => [category.id, category])), [categories]);
 
   const saveCategory = async () => {
     setBusy(true);
-    setStatus(null);
     try {
+      const maxSortOrder = categories.reduce((max, item) => Math.max(max, item.sortOrder), 0);
+      const sortOrder = maxSortOrder + 10;
+
       const response = await fetch("/api/admin/content/categories", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(newCategory),
+        body: JSON.stringify({ ...newCategory, sortOrder }),
       });
       await ensureOk(response, "Failed to create category");
-      setNewCategory({ slug: "", titleRu: "", titleEn: "", sortOrder: 100 });
+      setNewCategory({ slug: "", titleRu: "", titleEn: "" });
       await load();
-      setStatus("Category created.");
+      pushToast({
+        type: "success",
+        title: "Categories",
+        message: "Category created.",
+      });
     } catch (error) {
-      setStatus(getErrorMessage(error, "Failed to create category."));
+      pushToast({
+        type: "error",
+        title: "Categories",
+        message: getErrorMessage(error, "Failed to create category."),
+      });
     } finally {
       setBusy(false);
     }
@@ -90,7 +111,6 @@ export const AdminContentPanel = () => {
 
   const updateCategory = async (id: string, updates: Partial<KbCategoryInput>) => {
     setBusy(true);
-    setStatus(null);
     try {
       const response = await fetch(`/api/admin/content/categories/${id}`, {
         method: "PATCH",
@@ -99,9 +119,61 @@ export const AdminContentPanel = () => {
       });
       await ensureOk(response, "Failed to update category");
       await load();
-      setStatus("Category updated.");
+      pushToast({
+        type: "success",
+        title: "Categories",
+        message: "Category updated.",
+      });
     } catch (error) {
-      setStatus(getErrorMessage(error, "Failed to update category."));
+      pushToast({
+        type: "error",
+        title: "Categories",
+        message: getErrorMessage(error, "Failed to update category."),
+      });
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const reorderCategory = async (index: number, direction: "up" | "down") => {
+    const target = categories[index];
+    const swapWith = direction === "up" ? categories[index - 1] : categories[index + 1];
+    if (!target || !swapWith) {
+      return;
+    }
+
+    setBusy(true);
+    try {
+      const [targetResponse, swapResponse] = await Promise.all([
+        fetch(`/api/admin/content/categories/${target.id}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ sortOrder: swapWith.sortOrder }),
+        }),
+        fetch(`/api/admin/content/categories/${swapWith.id}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ sortOrder: target.sortOrder }),
+        }),
+      ]);
+
+      await Promise.all([
+        ensureOk(targetResponse, "Failed to reorder category"),
+        ensureOk(swapResponse, "Failed to reorder category"),
+      ]);
+
+      await load();
+      pushToast({
+        type: "success",
+        title: "Categories",
+        message: "Category order updated.",
+      });
+    } catch (error) {
+      pushToast({
+        type: "error",
+        title: "Categories",
+        message: getErrorMessage(error, "Failed to reorder category."),
+      });
     } finally {
       setBusy(false);
     }
@@ -109,14 +181,21 @@ export const AdminContentPanel = () => {
 
   const deleteCategory = async (id: string) => {
     setBusy(true);
-    setStatus(null);
     try {
       const response = await fetch(`/api/admin/content/categories/${id}`, { method: "DELETE" });
       await ensureOk(response, "Failed to delete category");
       await load();
-      setStatus("Category deleted.");
+      pushToast({
+        type: "success",
+        title: "Categories",
+        message: "Category deleted.",
+      });
     } catch (error) {
-      setStatus(getErrorMessage(error, "Failed to delete category."));
+      pushToast({
+        type: "error",
+        title: "Categories",
+        message: getErrorMessage(error, "Failed to delete category."),
+      });
     } finally {
       setBusy(false);
     }
@@ -124,7 +203,6 @@ export const AdminContentPanel = () => {
 
   const saveArticle = async (payload: KbArticleInput) => {
     setBusy(true);
-    setStatus(null);
     try {
       const response = await fetch("/api/admin/content/articles", {
         method: "POST",
@@ -135,10 +213,18 @@ export const AdminContentPanel = () => {
       setEditorMode("list");
       setEditingArticleId(null);
       await load();
-      setStatus("Article created.");
+      pushToast({
+        type: "success",
+        title: "Articles",
+        message: "Article created.",
+      });
     } catch (error) {
       const message = getErrorMessage(error, "Failed to create article.");
-      setStatus(message);
+      pushToast({
+        type: "error",
+        title: "Articles",
+        message,
+      });
       throw error;
     } finally {
       setBusy(false);
@@ -147,7 +233,6 @@ export const AdminContentPanel = () => {
 
   const updateArticle = async (id: string, payload: Partial<KbArticleInput>) => {
     setBusy(true);
-    setStatus(null);
     try {
       const response = await fetch(`/api/admin/content/articles/${id}`, {
         method: "PATCH",
@@ -158,10 +243,18 @@ export const AdminContentPanel = () => {
       setEditorMode("list");
       setEditingArticleId(null);
       await load();
-      setStatus("Article updated.");
+      pushToast({
+        type: "success",
+        title: "Articles",
+        message: "Article updated.",
+      });
     } catch (error) {
       const message = getErrorMessage(error, "Failed to update article.");
-      setStatus(message);
+      pushToast({
+        type: "error",
+        title: "Articles",
+        message,
+      });
       throw error;
     } finally {
       setBusy(false);
@@ -170,14 +263,21 @@ export const AdminContentPanel = () => {
 
   const deleteArticle = async (id: string) => {
     setBusy(true);
-    setStatus(null);
     try {
       const response = await fetch(`/api/admin/content/articles/${id}`, { method: "DELETE" });
       await ensureOk(response, "Failed to delete article");
       await load();
-      setStatus("Article deleted.");
+      pushToast({
+        type: "success",
+        title: "Articles",
+        message: "Article deleted.",
+      });
     } catch (error) {
-      setStatus(getErrorMessage(error, "Failed to delete article."));
+      pushToast({
+        type: "error",
+        title: "Articles",
+        message: getErrorMessage(error, "Failed to delete article."),
+      });
     } finally {
       setBusy(false);
     }
@@ -252,7 +352,7 @@ export const AdminContentPanel = () => {
           {tab === "articles" ? (
             <button
               type="button"
-              className="button button-primary"
+              className="button button-primary admin-table-action-btn"
               onClick={() => setEditorMode("create")}
               disabled={busy}
               data-testid="admin-kb-new-article-button"
@@ -261,7 +361,6 @@ export const AdminContentPanel = () => {
             </button>
           ) : null}
         </div>
-        {status ? <p className="muted" data-testid="admin-kb-status">{status}</p> : null}
 
         <div className="test-selector">
           <button
@@ -301,18 +400,18 @@ export const AdminContentPanel = () => {
               >
                 {articles.map((article, index) => (
                   <tr key={article.id} data-testid={`admin-kb-article-row-${index}`}>
-                    <td>{article.titleEn || article.titleRu}</td>
-                    <td>{article.slug}</td>
-                    <td>{categoryById.get(article.categoryId)?.titleEn ?? "Unknown category"}</td>
+                    <td><span className="admin-cell-ellipsis">{article.titleEn || article.titleRu}</span></td>
+                    <td><span className="admin-cell-ellipsis">{article.slug}</span></td>
+                    <td><span className="admin-cell-ellipsis">{categoryById.get(article.categoryId)?.titleEn ?? "Unknown category"}</span></td>
                     <td>
                       <AdminStatusBadge label={article.isPublished ? "published" : "draft"} tone={article.isPublished ? "success" : "neutral"} />
                     </td>
-                    <td>{formatDate(article.updatedAt ?? article.publishedAt)}</td>
+                    <td><span className="admin-cell-ellipsis">{formatDate(article.updatedAt ?? article.publishedAt)}</span></td>
                     <td>
                       <div className="admin-row-actions">
                         <button
                           type="button"
-                          className="button button-muted"
+                          className="button button-muted admin-table-action-btn"
                           onClick={() => {
                             setEditorMode("edit");
                             setEditingArticleId(article.id);
@@ -324,7 +423,7 @@ export const AdminContentPanel = () => {
                         </button>
                         <button
                           type="button"
-                          className="button button-danger"
+                          className="button button-danger admin-table-action-btn"
                           onClick={() => setConfirmState({ type: "delete-article", article })}
                           disabled={busy}
                           data-testid={`admin-kb-article-delete-${index}`}
@@ -353,7 +452,7 @@ export const AdminContentPanel = () => {
                         <AdminStatusBadge label={article.isPublished ? "published" : "draft"} tone={article.isPublished ? "success" : "neutral"} />
                         <button
                           type="button"
-                          className="button button-muted"
+                          className="button button-muted admin-table-action-btn"
                           onClick={() => {
                             setEditorMode("edit");
                             setEditingArticleId(article.id);
@@ -365,7 +464,7 @@ export const AdminContentPanel = () => {
                         </button>
                         <button
                           type="button"
-                          className="button button-danger"
+                          className="button button-danger admin-table-action-btn"
                           onClick={() => setConfirmState({ type: "delete-article", article })}
                           disabled={busy}
                           data-testid={`admin-kb-article-delete-mobile-${index}`}
@@ -410,17 +509,9 @@ export const AdminContentPanel = () => {
                 onChange={(e) => setNewCategory((prev) => ({ ...prev, titleEn: e.target.value }))}
                 data-testid="admin-kb-category-title-en-input"
               />
-              <input
-                className="input"
-                type="number"
-                placeholder="Sort"
-                value={newCategory.sortOrder}
-                onChange={(e) => setNewCategory((prev) => ({ ...prev, sortOrder: Number(e.target.value) }))}
-                data-testid="admin-kb-category-sort-input"
-              />
               <button
                 type="button"
-                className="button button-primary"
+                className="button button-primary admin-table-action-btn"
                 onClick={saveCategory}
                 disabled={busy || !newCategory.slug || !newCategory.titleRu || !newCategory.titleEn}
                 data-testid="admin-kb-category-save-button"
@@ -429,108 +520,153 @@ export const AdminContentPanel = () => {
               </button>
             </div>
 
-            <div className="admin-desktop-only">
-              <AdminTable
-                columns={[
-                  { key: "name", label: "Name" },
-                  { key: "slug", label: "Slug" },
-                  { key: "sort", label: "Sort" },
-                  { key: "actions", label: "Actions", className: "admin-col-actions" },
-                ]}
-                hasRows={categories.length > 0}
-                emptyMessage="No categories yet."
-              >
-                {categories.map((category, index) => (
-                  <tr key={category.id} data-testid={`admin-kb-category-row-${index}`}>
-                    <td>
-                      <div className="admin-inline-edit-grid">
-                        <input
-                          className="input"
-                          value={category.titleRu}
-                          onChange={(e) =>
-                            setCategories((prev) =>
-                              prev.map((item) => (item.id === category.id ? { ...item, titleRu: e.target.value } : item))
-                            )
-                          }
-                          data-testid={`admin-kb-category-title-ru-${index}`}
-                        />
-                        <input
-                          className="input"
-                          value={category.titleEn}
-                          onChange={(e) =>
-                            setCategories((prev) =>
-                              prev.map((item) => (item.id === category.id ? { ...item, titleEn: e.target.value } : item))
-                            )
-                          }
-                          data-testid={`admin-kb-category-title-en-${index}`}
-                        />
-                      </div>
-                    </td>
-                    <td>{category.slug}</td>
-                    <td>{category.sortOrder}</td>
-                    <td>
-                      <div className="admin-row-actions">
-                        <button
-                          type="button"
-                          className="button button-primary"
-                          onClick={() => updateCategory(category.id, { titleRu: category.titleRu, titleEn: category.titleEn, sortOrder: category.sortOrder })}
-                          disabled={busy}
-                          data-testid={`admin-kb-category-save-${index}`}
-                        >
-                          Save
-                        </button>
-                        <button
-                          type="button"
-                          className="button button-danger"
-                          onClick={() => setConfirmState({ type: "delete-category", category })}
-                          disabled={busy}
-                          data-testid={`admin-kb-category-delete-${index}`}
-                        >
-                          Delete
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </AdminTable>
-            </div>
+            <div className="admin-categories-table-block">
+              <div className="admin-desktop-only">
+                <AdminTable
+                  columns={[
+                    { key: "name", label: "Name" },
+                    { key: "slug", label: "Slug" },
+                    { key: "order", label: "Order" },
+                    { key: "actions", label: "Actions", className: "admin-col-actions" },
+                  ]}
+                  hasRows={categories.length > 0}
+                  emptyMessage="No categories yet."
+                >
+                  {categories.map((category, index) => (
+                    <tr key={category.id} data-testid={`admin-kb-category-row-${index}`}>
+                      <td>
+                        <div className="admin-inline-edit-grid">
+                          <input
+                            className="input"
+                            value={category.titleRu}
+                            onChange={(e) =>
+                              setCategories((prev) =>
+                                prev.map((item) => (item.id === category.id ? { ...item, titleRu: e.target.value } : item))
+                              )
+                            }
+                            data-testid={`admin-kb-category-title-ru-${index}`}
+                          />
+                          <input
+                            className="input"
+                            value={category.titleEn}
+                            onChange={(e) =>
+                              setCategories((prev) =>
+                                prev.map((item) => (item.id === category.id ? { ...item, titleEn: e.target.value } : item))
+                              )
+                            }
+                            data-testid={`admin-kb-category-title-en-${index}`}
+                          />
+                        </div>
+                      </td>
+                      <td><span className="admin-cell-ellipsis">{category.slug}</span></td>
+                      <td>
+                        <div className="admin-row-actions admin-row-actions-order">
+                          <button
+                            type="button"
+                            className="button button-muted admin-table-action-btn admin-order-btn"
+                            onClick={() => reorderCategory(index, "up")}
+                            disabled={busy || index === 0}
+                            aria-label="Move category up"
+                            data-testid={`admin-category-move-up-${index}`}
+                          >
+                            <ArrowIcon direction="up" />
+                          </button>
+                          <button
+                            type="button"
+                            className="button button-muted admin-table-action-btn admin-order-btn"
+                            onClick={() => reorderCategory(index, "down")}
+                            disabled={busy || index === categories.length - 1}
+                            aria-label="Move category down"
+                            data-testid={`admin-category-move-down-${index}`}
+                          >
+                            <ArrowIcon direction="down" />
+                          </button>
+                        </div>
+                      </td>
+                      <td>
+                        <div className="admin-row-actions">
+                          <button
+                            type="button"
+                            className="button button-primary admin-table-action-btn"
+                            onClick={() => updateCategory(category.id, { titleRu: category.titleRu, titleEn: category.titleEn })}
+                            disabled={busy}
+                            data-testid={`admin-kb-category-save-${index}`}
+                          >
+                            Save
+                          </button>
+                          <button
+                            type="button"
+                            className="button button-danger admin-table-action-btn"
+                            onClick={() => setConfirmState({ type: "delete-category", category })}
+                            disabled={busy}
+                            data-testid={`admin-kb-category-delete-${index}`}
+                          >
+                            Delete
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </AdminTable>
+              </div>
 
-            <div className="admin-mobile-only">
-              <div className="admin-mobile-list">
-                {categories.map((category, index) => (
-                  <AdminMobileCard
-                    key={category.id}
-                    title={category.titleEn}
-                    subtitle={`/${category.slug}`}
-                    expanded={false}
-                    onToggle={() => {}}
-                    showToggle={false}
-                    actions={
-                      <div className="admin-mobile-inline">
-                        <button
-                          type="button"
-                          className="button button-primary"
-                          onClick={() => updateCategory(category.id, { titleRu: category.titleRu, titleEn: category.titleEn, sortOrder: category.sortOrder })}
-                          disabled={busy}
-                          data-testid={`admin-kb-category-save-mobile-${index}`}
-                        >
-                          Save
-                        </button>
-                        <button
-                          type="button"
-                          className="button button-danger"
-                          onClick={() => setConfirmState({ type: "delete-category", category })}
-                          disabled={busy}
-                          data-testid={`admin-kb-category-delete-mobile-${index}`}
-                        >
-                          Delete
-                        </button>
-                      </div>
-                    }
-                  >
-                    <p className="muted">Sort: {category.sortOrder}</p>
-                  </AdminMobileCard>
-                ))}
+              <div className="admin-mobile-only">
+                <div className="admin-mobile-list">
+                  {categories.map((category, index) => (
+                    <AdminMobileCard
+                      key={category.id}
+                      title={category.titleEn}
+                      subtitle={`/${category.slug}`}
+                      expanded={false}
+                      onToggle={() => {}}
+                      showToggle={false}
+                      actions={
+                        <div className="admin-mobile-inline">
+                          <button
+                            type="button"
+                            className="button button-muted admin-table-action-btn admin-order-btn"
+                            onClick={() => reorderCategory(index, "up")}
+                            disabled={busy || index === 0}
+                            aria-label="Move category up"
+                            data-testid={`admin-category-move-up-mobile-${index}`}
+                          >
+                            <ArrowIcon direction="up" />
+                          </button>
+                          <button
+                            type="button"
+                            className="button button-muted admin-table-action-btn admin-order-btn"
+                            onClick={() => reorderCategory(index, "down")}
+                            disabled={busy || index === categories.length - 1}
+                            aria-label="Move category down"
+                            data-testid={`admin-category-move-down-mobile-${index}`}
+                          >
+                            <ArrowIcon direction="down" />
+                          </button>
+                          <button
+                            type="button"
+                            className="button button-primary admin-table-action-btn"
+                            onClick={() => updateCategory(category.id, { titleRu: category.titleRu, titleEn: category.titleEn })}
+                            disabled={busy}
+                            data-testid={`admin-kb-category-save-mobile-${index}`}
+                          >
+                            Save
+                          </button>
+                          <button
+                            type="button"
+                            className="button button-danger admin-table-action-btn"
+                            onClick={() => setConfirmState({ type: "delete-category", category })}
+                            disabled={busy}
+                            data-testid={`admin-kb-category-delete-mobile-${index}`}
+                          >
+                            Delete
+                          </button>
+                        </div>
+                      }
+                    >
+                      <p className="muted">Order: {index + 1}</p>
+                    </AdminMobileCard>
+                  ))}
+                </div>
               </div>
             </div>
           </>

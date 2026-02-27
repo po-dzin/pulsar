@@ -3,9 +3,11 @@
 import { useEffect, useState } from "react";
 import { ConfirmDialog } from "@/presentation/components/ConfirmDialog";
 import { AdminMobileCard } from "@/presentation/components/admin/AdminMobileCard";
+import { AdminPagination } from "@/presentation/components/admin/AdminPagination";
 import { AdminStatusBadge } from "@/presentation/components/admin/AdminStatusBadge";
 import { AdminTable } from "@/presentation/components/admin/AdminTable";
 import { AdminTableToolbar } from "@/presentation/components/admin/AdminTableToolbar";
+import { useAdminToasts } from "@/presentation/components/admin/useAdminToasts";
 
 type RoleRow = {
   userId: string;
@@ -29,6 +31,8 @@ type RolesResponse = {
 const formatDate = (value: string | null) => (value ? new Date(value).toLocaleString() : "—");
 
 export const AdminRolesPanel = () => {
+  const { pushToast } = useAdminToasts();
+
   const [data, setData] = useState<RolesResponse>({
     rows: [],
     meta: { page: 1, pageSize: 20, total: 0, totalPages: 1 },
@@ -39,7 +43,6 @@ export const AdminRolesPanel = () => {
   const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(false);
-  const [status, setStatus] = useState<string | null>(null);
   const [grantEmail, setGrantEmail] = useState("");
   const [confirmUser, setConfirmUser] = useState<RoleRow | null>(null);
 
@@ -62,12 +65,21 @@ export const AdminRolesPanel = () => {
     });
     if (search) params.set("search", search);
 
-    const response = await fetch(`/api/admin/roles?${params.toString()}`).then((res) => res.json());
-    setData({
-      rows: response.rows ?? [],
-      meta: response.meta ?? { page: 1, pageSize: 20, total: 0, totalPages: 1 },
-    });
-    setLoading(false);
+    try {
+      const response = await fetch(`/api/admin/roles?${params.toString()}`).then((res) => res.json());
+      setData({
+        rows: response.rows ?? [],
+        meta: response.meta ?? { page: 1, pageSize: 20, total: 0, totalPages: 1 },
+      });
+    } catch {
+      pushToast({
+        type: "error",
+        title: "Roles",
+        message: "Failed to load roles.",
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => {
@@ -77,48 +89,72 @@ export const AdminRolesPanel = () => {
 
   const grantAdmin = async () => {
     if (!grantEmail.trim()) {
-      setStatus("Provide email to grant admin role.");
+      pushToast({
+        type: "warning",
+        title: "Roles",
+        message: "Provide email to grant admin role.",
+      });
       return;
     }
 
     setLoading(true);
-    setStatus(null);
-    const response = await fetch("/api/admin/roles", {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ role: "admin", email: grantEmail.trim() }),
-    });
-    setLoading(false);
+    try {
+      const response = await fetch("/api/admin/roles", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ role: "admin", email: grantEmail.trim() }),
+      });
 
-    if (!response.ok) {
-      const body = await response.json().catch(() => ({}));
-      setStatus(body.error ?? "Failed to grant role.");
-      return;
+      if (!response.ok) {
+        const body = await response.json().catch(() => ({}));
+        pushToast({
+          type: "error",
+          title: "Roles",
+          message: body.error ?? "Failed to grant role.",
+        });
+        return;
+      }
+
+      pushToast({
+        type: "success",
+        title: "Roles",
+        message: "Role assigned.",
+      });
+      setGrantEmail("");
+      await load();
+    } finally {
+      setLoading(false);
     }
-
-    setStatus("Role assigned.");
-    setGrantEmail("");
-    await load();
   };
 
   const revokeAdmin = async (row: RoleRow) => {
     setLoading(true);
-    setStatus(null);
-    const response = await fetch("/api/admin/roles", {
-      method: "DELETE",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ userId: row.userId, role: "admin" }),
-    });
-    setLoading(false);
+    try {
+      const response = await fetch("/api/admin/roles", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId: row.userId, role: "admin" }),
+      });
 
-    if (!response.ok) {
-      const body = await response.json().catch(() => ({}));
-      setStatus(body.error ?? "Failed to revoke role.");
-      return;
+      if (!response.ok) {
+        const body = await response.json().catch(() => ({}));
+        pushToast({
+          type: "error",
+          title: "Roles",
+          message: body.error ?? "Failed to revoke role.",
+        });
+        return;
+      }
+
+      pushToast({
+        type: "success",
+        title: "Roles",
+        message: "Role revoked.",
+      });
+      await load();
+    } finally {
+      setLoading(false);
     }
-
-    setStatus("Role revoked.");
-    await load();
   };
 
   return (
@@ -149,12 +185,16 @@ export const AdminRolesPanel = () => {
             placeholder="User email"
             data-testid="admin-role-grant-email"
           />
-          <button type="button" className="button button-primary" onClick={() => void grantAdmin()} disabled={loading} data-testid="assign-role-button">
+          <button
+            type="button"
+            className="button button-primary admin-table-action-btn"
+            onClick={() => void grantAdmin()}
+            disabled={loading}
+            data-testid="assign-role-button"
+          >
             Grant admin
           </button>
         </div>
-
-        {status ? <p className="muted">{status}</p> : null}
 
         <AdminTableToolbar
           searchValue={searchInput}
@@ -183,24 +223,24 @@ export const AdminRolesPanel = () => {
               { key: "name", label: "Name" },
               { key: "email", label: "Email" },
               { key: "role", label: "Role" },
-              { key: "revoke", label: "Revoke", className: "admin-col-actions" },
+              { key: "revoke", label: "Actions", className: "admin-col-actions" },
             ]}
             hasRows={data.rows.length > 0}
             emptyMessage={loading ? "Loading..." : "No users found."}
           >
             {data.rows.map((item, index) => (
               <tr key={item.userId} data-testid={`admin-role-row-${index}`}>
-                <td>{item.fullName ?? "User"}</td>
-                <td>{item.email}</td>
+                <td><span className="admin-cell-ellipsis">{item.fullName ?? "User"}</span></td>
+                <td><span className="admin-cell-ellipsis">{item.email}</span></td>
                 <td>
                   <AdminStatusBadge label={item.role} tone={item.role === "admin" ? "warning" : "neutral"} />
-                  <span className="muted admin-inline-note">{formatDate(item.assignedAt)}</span>
+                  <span className="muted admin-inline-note admin-cell-ellipsis">{formatDate(item.assignedAt)}</span>
                 </td>
                 <td>
                   {item.role === "admin" ? (
                     <button
                       type="button"
-                      className="button button-danger"
+                      className="button button-danger admin-table-action-btn"
                       onClick={() => setConfirmUser(item)}
                       disabled={loading}
                       data-testid={`revoke-role-button-${index}`}
@@ -232,7 +272,7 @@ export const AdminRolesPanel = () => {
                     {item.role === "admin" ? (
                       <button
                         type="button"
-                        className="button button-danger"
+                        className="button button-danger admin-table-action-btn"
                         onClick={() => setConfirmUser(item)}
                         disabled={loading}
                         data-testid={`revoke-role-mobile-${index}`}
@@ -250,20 +290,13 @@ export const AdminRolesPanel = () => {
           </div>
         </div>
 
-        <div className="admin-pagination">
-          <button type="button" className="button button-muted" onClick={() => setPage((value) => Math.max(1, value - 1))} disabled={data.meta.page <= 1 || loading}>
-            Previous
-          </button>
-          <span className="muted">Page {data.meta.page} / {data.meta.totalPages}</span>
-          <button
-            type="button"
-            className="button button-muted"
-            onClick={() => setPage((value) => Math.min(data.meta.totalPages, value + 1))}
-            disabled={data.meta.page >= data.meta.totalPages || loading}
-          >
-            Next
-          </button>
-        </div>
+        <AdminPagination
+          page={data.meta.page}
+          totalPages={data.meta.totalPages}
+          disabled={loading}
+          onPrev={() => setPage((value) => Math.max(1, value - 1))}
+          onNext={() => setPage((value) => Math.min(data.meta.totalPages, value + 1))}
+        />
       </section>
     </>
   );

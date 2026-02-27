@@ -21,7 +21,7 @@ export const AdminMobileCard = ({ title, subtitle, expanded, onToggle, showToggl
           {subtitle ? <p className="muted admin-mobile-card-subtitle">{subtitle}</p> : null}
         </div>
         {showToggle ? (
-          <button type="button" className="button button-muted admin-expand-btn" onClick={onToggle}>
+          <button type="button" className="button button-muted admin-expand-btn admin-table-action-btn" onClick={onToggle}>
             {expanded ? "Hide" : "Details"}
           </button>
         ) : null}
