@@ -26,8 +26,23 @@ const parseState = (raw) => {
   return JSON.parse(decoded);
 };
 
+const validateState = (state) => {
+  if (!state || typeof state !== "object") {
+    throw new Error("Storage state must be a JSON object.");
+  }
+  const cookies = state.cookies;
+  const origins = state.origins;
+  if (!Array.isArray(cookies) || !Array.isArray(origins)) {
+    throw new Error("Storage state must include array fields: cookies and origins.");
+  }
+  if (cookies.length === 0) {
+    throw new Error("Storage state has no cookies; OAuth session is likely invalid.");
+  }
+};
+
 const main = async () => {
   const parsed = parseState(source);
+  validateState(parsed);
   await mkdir(dirname(outputPath), { recursive: true });
   await writeFile(outputPath, JSON.stringify(parsed, null, 2), "utf-8");
   process.stdout.write(`Storage state written to ${outputPath}\n`);

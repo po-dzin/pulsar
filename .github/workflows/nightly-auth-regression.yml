@@ -1,8 +1,6 @@
 name: Nightly Auth Regression
 
 on:
-  schedule:
-    - cron: "0 2 * * *"
   workflow_dispatch:
 
 jobs:
@@ -41,7 +39,9 @@ jobs:
           E2E_STORAGE_STATE: tests/e2e/.auth/user.json
           E2E_FULL_MOBILE_MATRIX: "1"
           CI: "1"
-        run: npm run test:e2e:auth:user
+        run: |
+          npm run test:e2e:core
+          npm run test:e2e:auth:user
 
       - name: Upload user auth report
         if: always()
