@@ -1,7 +1,23 @@
 import { expect, test } from "@playwright/test";
 
+const hasPreAuth = process.env.E2E_AUTHENTICATED === "1" && Boolean(process.env.E2E_STORAGE_STATE);
+
 test.describe("Physical diagnostics flow", () => {
+  test("guest sees auth-required gate in physical flow", async ({ page }) => {
+    test.skip(hasPreAuth, "Guest-specific assertion; skipped in authenticated run.");
+
+    await page.goto("/diagnostics?lang=en");
+    await page.getByTestId("flow-tab-physical").click();
+
+    await expect(page.getByTestId("physical-full-intro")).toBeVisible();
+    await expect(page.getByTestId("physical-signin-button")).toBeVisible();
+    await expect(page.getByTestId("physical-consent-checkbox")).toHaveCount(0);
+    await expect(page.getByTestId("physical-start-button")).toHaveCount(0);
+  });
+
   test("progress updates only after Next test click", async ({ page }) => {
+    test.skip(!hasPreAuth, "Requires pre-authenticated OAuth session in test environment.");
+
     await page.goto("/diagnostics?lang=en");
 
     await page.getByTestId("flow-tab-physical").click();
@@ -16,7 +32,9 @@ test.describe("Physical diagnostics flow", () => {
     await expect(page.getByTestId("physical-progress-label")).toHaveText("10%");
   });
 
-  test("full physical flow completes for guest and shows summary", async ({ page }) => {
+  test("full physical flow completes for authenticated user and shows summary", async ({ page }) => {
+    test.skip(!hasPreAuth, "Requires pre-authenticated OAuth session in test environment.");
+
     await page.goto("/diagnostics?lang=en");
 
     await page.getByTestId("flow-tab-physical").click();
@@ -53,14 +71,17 @@ test.describe("Physical diagnostics flow", () => {
 
     await expect(page.getByTestId("physical-result-card")).toBeVisible();
     await expect(page.getByText(/Overall result:|Общий результат:/)).toBeVisible();
-    await expect(page.getByTestId("physical-signin-button")).toBeVisible();
+    await expect(page.getByTestId("physical-cta-products")).toBeVisible();
+    await expect(page.getByTestId("physical-save-result-button")).toBeVisible();
   });
 
-  test("EN locale shows translated full test intro", async ({ page }) => {
+  test("EN locale shows translated full test intro in guest gate", async ({ page }) => {
+    test.skip(hasPreAuth, "Guest-specific assertion; skipped in authenticated run.");
+
     await page.goto("/diagnostics?lang=en");
     await page.getByTestId("flow-tab-physical").click();
 
     await expect(page.getByTestId("physical-full-intro")).toContainText("Single full test with 10 protocols across 5 categories");
-    await expect(page.getByTestId("physical-start-button")).toContainText("Start test");
+    await expect(page.getByTestId("physical-signin-button")).toBeVisible();
   });
 });

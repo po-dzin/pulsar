@@ -63,4 +63,27 @@ test.describe("Admin basic contour", () => {
     await page.goto("/admin/content?lang=en");
     await expectNoCriticalA11yViolations(page, ["[data-testid='admin-kb-content-table']"]);
   });
+
+  test("admin keyboard controls work for icon buttons and focus", async ({ page }) => {
+    await page.goto("/admin/leads");
+
+    const chevron = page.getByTestId("lead-row-expand-chevron-0");
+    await chevron.focus();
+    await expect(chevron).toBeFocused();
+    await page.keyboard.press("Enter");
+    await expect(page.locator("tr.admin-row-details").first()).toBeVisible();
+
+    await page.getByTestId("lead-status-select-0").selectOption("done");
+    const closeToast = page.locator("[data-testid^='admin-toast-close-']").first();
+    await closeToast.focus();
+    await expect(closeToast).toBeFocused();
+    await page.keyboard.press("Enter");
+    await expect(page.getByTestId("admin-toast").filter({ hasText: "Lead status updated" })).toHaveCount(0);
+  });
+
+  test("admin mobile view has no critical a11y violations", async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto("/admin");
+    await expectNoCriticalA11yViolations(page, [".admin-mobile-list"]);
+  });
 });

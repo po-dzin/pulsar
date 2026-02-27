@@ -1784,6 +1784,11 @@ footer {
   width: 230px;
 }
 
+.admin-table th.admin-col-actions {
+  text-align: right;
+  padding-right: 22px;
+}
+
 .admin-row-actions {
   display: flex;
   width: 100%;
@@ -1802,6 +1807,7 @@ footer {
 
 .admin-table td:last-child {
   text-align: right;
+  padding-right: 22px;
 }
 
 .admin-row-details td {

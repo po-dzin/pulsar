@@ -115,21 +115,15 @@ export const AdminRolesPanel = () => {
 
     setLoading(true);
     try {
-      const response = await fetch("/api/admin/roles", {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ role: "admin", email: grantEmail.trim() }),
-      });
-
-      if (!response.ok) {
-        const body = await response.json().catch(() => ({}));
-        pushToast({
-          type: "error",
-          title: "Roles",
-          message: body.error ?? "Failed to grant role.",
-        });
-        return;
-      }
+      await fetchAdminJson<{ ok: boolean }>(
+        "/api/admin/roles",
+        {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ role: "admin", email: grantEmail.trim() }),
+        },
+        "Failed to grant role."
+      );
 
       pushToast({
         type: "success",
@@ -138,6 +132,12 @@ export const AdminRolesPanel = () => {
       });
       setGrantEmail("");
       await load();
+    } catch (error) {
+      pushToast({
+        type: "error",
+        title: "Roles",
+        message: error instanceof Error ? error.message : "Failed to grant role.",
+      });
     } finally {
       setLoading(false);
     }
@@ -146,21 +146,15 @@ export const AdminRolesPanel = () => {
   const revokeAdmin = async (row: RoleRow) => {
     setLoading(true);
     try {
-      const response = await fetch("/api/admin/roles", {
-        method: "DELETE",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userId: row.userId, role: "admin" }),
-      });
-
-      if (!response.ok) {
-        const body = await response.json().catch(() => ({}));
-        pushToast({
-          type: "error",
-          title: "Roles",
-          message: body.error ?? "Failed to revoke role.",
-        });
-        return;
-      }
+      await fetchAdminJson<{ ok: boolean }>(
+        "/api/admin/roles",
+        {
+          method: "DELETE",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ userId: row.userId, role: "admin" }),
+        },
+        "Failed to revoke role."
+      );
 
       pushToast({
         type: "success",
@@ -168,6 +162,12 @@ export const AdminRolesPanel = () => {
         message: "Role revoked.",
       });
       await load();
+    } catch (error) {
+      pushToast({
+        type: "error",
+        title: "Roles",
+        message: error instanceof Error ? error.message : "Failed to revoke role.",
+      });
     } finally {
       setLoading(false);
     }

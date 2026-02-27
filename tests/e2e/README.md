@@ -9,7 +9,7 @@
 4. `diagnostics-physical.spec.ts` - guest auth-gate + authenticated happy-path физического теста.
 5. `products-knowledge.spec.ts` - продукты/заявка + чтение статьи БЗ.
 6. `profile-auth.spec.ts` - кабинет, история тестов, фильтры, PDF-скачивание (pre-auth).
-7. `admin-basic.spec.ts` - админ-панель и смена статуса лида (admin pre-auth).
+7. `admin-basic.spec.ts` - админ-панель, смена статуса лида, keyboard/focus и a11y smoke (admin pre-auth).
 8. `admin-content-crud.spec.ts` - full CRUD контур БЗ в админке: create/preview/publish/delete + reorder categories.
 
 ## Быстрый запуск
