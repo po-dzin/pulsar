@@ -29,6 +29,14 @@ type LeadsResponse = {
   };
 };
 
+async function parseJsonOrThrow<T>(response: Response, fallbackMessage: string): Promise<T> {
+  const body = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    throw new Error(typeof body?.error === "string" ? body.error : fallbackMessage);
+  }
+  return body as T;
+}
+
 const formatDate = (value: string | null) => (value ? new Date(value).toLocaleString() : "—");
 const ellipsis = (text: string, limit = 76) => (text.length > limit ? `${text.slice(0, limit)}...` : text);
 
@@ -70,7 +78,10 @@ export const AdminLeadsPanel = () => {
     if (search) params.set("search", search);
 
     try {
-      const response = await fetch(`/api/admin/leads?${params.toString()}`).then((res) => res.json());
+      const response = await parseJsonOrThrow<LeadsResponse>(
+        await fetch(`/api/admin/leads?${params.toString()}`),
+        "Failed to load leads."
+      );
       setData({
         rows: response.rows ?? [],
         meta: response.meta ?? { page: 1, pageSize: 20, total: 0, totalPages: 1 },

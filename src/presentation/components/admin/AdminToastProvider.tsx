@@ -26,7 +26,7 @@ export const AdminToastProvider = ({ children }: { children: ReactNode }) => {
   const [queue, setQueue] = useState<AdminToast[]>([]);
   const timerMapRef = useRef<Map<string, number>>(new Map());
 
-  const visibleToasts = useMemo(() => queue.slice(-MAX_VISIBLE_TOASTS), [queue]);
+  const visibleToasts = useMemo(() => queue.slice(0, MAX_VISIBLE_TOASTS), [queue]);
 
   const dismissToast = useCallback((id: string) => {
     const timer = timerMapRef.current.get(id);

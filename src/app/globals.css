@@ -1638,6 +1638,14 @@ footer {
   margin: 0 auto;
 }
 
+.admin-page-title {
+  font-size: clamp(1.6rem, 3vw, 2.8rem);
+}
+
+.admin-access-card {
+  margin-top: var(--space-4);
+}
+
 /* ── Metrics row ─────────────────────────────────────────── */
 
 .admin-metrics-row {
@@ -1690,6 +1698,14 @@ footer {
 
 .admin-section-head h3 {
   margin: 0;
+}
+
+.admin-dashboard-tabs {
+  margin-top: var(--space-4);
+}
+
+.admin-dashboard-panel {
+  margin-top: var(--space-3);
 }
 
 .admin-toolbar {
@@ -2034,6 +2050,10 @@ footer {
   gap: 12px;
 }
 
+.admin-editor-locale-tabs {
+  margin-top: 0;
+}
+
 .admin-editor-content-field {
   grid-column: 1 / -1;
 }
@@ -2203,9 +2223,9 @@ footer {
   }
 
   .admin-toast-viewport {
-    right: 50%;
-    transform: translateX(50%);
-    left: auto;
+    left: 50%;
+    transform: translateX(-50%);
+    right: auto;
     top: max(8px, env(safe-area-inset-top));
     bottom: auto;
     width: min(420px, calc(100vw - 16px));

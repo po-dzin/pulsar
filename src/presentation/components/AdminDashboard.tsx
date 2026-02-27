@@ -72,7 +72,7 @@ export const AdminDashboard = () => {
         </div>
       </div>
 
-      <div className="test-selector" style={{ marginTop: "var(--space-4)" }}>
+      <div className="test-selector admin-dashboard-tabs">
         {TABS.map((tab) => (
           <button
             key={tab.id}
@@ -86,7 +86,7 @@ export const AdminDashboard = () => {
         ))}
       </div>
 
-      <div style={{ marginTop: "var(--space-3)" }}>
+      <div className="admin-dashboard-panel">
         {activeTab === "users" ? <AdminUserActivityPanel /> : null}
         {activeTab === "roles" ? <AdminRolesPanel /> : null}
         {activeTab === "leads" ? <AdminLeadsPanel /> : null}

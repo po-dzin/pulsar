@@ -50,6 +50,14 @@ type PagedResponse = {
   };
 };
 
+async function parseJsonOrThrow<T>(response: Response, fallbackMessage: string): Promise<T> {
+  const body = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    throw new Error(typeof body?.error === "string" ? body.error : fallbackMessage);
+  }
+  return body as T;
+}
+
 const formatDate = (value: string | null) => {
   if (!value) return "—";
   return new Date(value).toLocaleString();
@@ -82,31 +90,37 @@ export const AdminUserActivityPanel = () => {
   }, [searchInput]);
 
   useEffect(() => {
-    setLoading(true);
-    const params = new URLSearchParams({
-      page: String(page),
-      pageSize: "20",
-      sortBy,
-      sortDir,
-    });
-    if (search) params.set("search", search);
+    const load = async () => {
+      setLoading(true);
+      const params = new URLSearchParams({
+        page: String(page),
+        pageSize: "20",
+        sortBy,
+        sortDir,
+      });
+      if (search) params.set("search", search);
 
-    fetch(`/api/admin/user-activity?${params.toString()}`)
-      .then((res) => res.json())
-      .then((response) => {
+      try {
+        const response = await parseJsonOrThrow<PagedResponse>(
+          await fetch(`/api/admin/user-activity?${params.toString()}`),
+          "Failed to load users activity."
+        );
         setData({
           rows: response.rows ?? [],
           meta: response.meta ?? { page: 1, pageSize: 20, total: 0, totalPages: 1 },
         });
-      })
-      .catch(() => {
+      } catch {
         pushToast({
           type: "error",
           title: "Users",
           message: "Failed to load users activity.",
         });
-      })
-      .finally(() => setLoading(false));
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    void load();
   }, [page, pushToast, search, sortBy, sortDir]);
 
   const loadDetails = async (userId: string) => {
@@ -114,7 +128,10 @@ export const AdminUserActivityPanel = () => {
     setDetailsLoading((prev) => ({ ...prev, [userId]: true }));
 
     try {
-      const response = await fetch(`/api/admin/user-activity/${userId}/details?testsLimit=5&leadsLimit=5`).then((res) => res.json());
+      const response = await parseJsonOrThrow<UserActivityDetails>(
+        await fetch(`/api/admin/user-activity/${userId}/details?testsLimit=5&leadsLimit=5`),
+        "Failed to load user details."
+      );
       setDetailsByUserId((prev) => ({
         ...prev,
         [userId]: {

@@ -78,6 +78,10 @@ export const AdminContentPanel = () => {
   }, [load, pushToast]);
 
   const categoryById = useMemo(() => new Map(categories.map((category) => [category.id, category])), [categories]);
+  const sortedCategories = useMemo(
+    () => [...categories].sort((left, right) => (left.sortOrder - right.sortOrder) || left.slug.localeCompare(right.slug)),
+    [categories]
+  );
 
   const saveCategory = async () => {
     setBusy(true);
@@ -136,8 +140,8 @@ export const AdminContentPanel = () => {
   };
 
   const reorderCategory = async (index: number, direction: "up" | "down") => {
-    const target = categories[index];
-    const swapWith = direction === "up" ? categories[index - 1] : categories[index + 1];
+    const target = sortedCategories[index];
+    const swapWith = direction === "up" ? sortedCategories[index - 1] : sortedCategories[index + 1];
     if (!target || !swapWith) {
       return;
     }
@@ -529,10 +533,10 @@ export const AdminContentPanel = () => {
                     { key: "order", label: "Order" },
                     { key: "actions", label: "Actions", className: "admin-col-actions" },
                   ]}
-                  hasRows={categories.length > 0}
+                  hasRows={sortedCategories.length > 0}
                   emptyMessage="No categories yet."
                 >
-                  {categories.map((category, index) => (
+                  {sortedCategories.map((category, index) => (
                     <tr key={category.id} data-testid={`admin-kb-category-row-${index}`}>
                       <td>
                         <div className="admin-inline-edit-grid">
@@ -575,7 +579,7 @@ export const AdminContentPanel = () => {
                             type="button"
                             className="button button-muted admin-table-action-btn admin-order-btn"
                             onClick={() => reorderCategory(index, "down")}
-                            disabled={busy || index === categories.length - 1}
+                            disabled={busy || index === sortedCategories.length - 1}
                             aria-label="Move category down"
                             data-testid={`admin-category-move-down-${index}`}
                           >
@@ -612,7 +616,7 @@ export const AdminContentPanel = () => {
 
               <div className="admin-mobile-only">
                 <div className="admin-mobile-list">
-                  {categories.map((category, index) => (
+                  {sortedCategories.map((category, index) => (
                     <AdminMobileCard
                       key={category.id}
                       title={category.titleEn}
@@ -636,7 +640,7 @@ export const AdminContentPanel = () => {
                             type="button"
                             className="button button-muted admin-table-action-btn admin-order-btn"
                             onClick={() => reorderCategory(index, "down")}
-                            disabled={busy || index === categories.length - 1}
+                            disabled={busy || index === sortedCategories.length - 1}
                             aria-label="Move category down"
                             data-testid={`admin-category-move-down-mobile-${index}`}
                           >

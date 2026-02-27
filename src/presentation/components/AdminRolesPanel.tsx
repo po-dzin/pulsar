@@ -28,6 +28,14 @@ type RolesResponse = {
   };
 };
 
+async function parseJsonOrThrow<T>(response: Response, fallbackMessage: string): Promise<T> {
+  const body = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    throw new Error(typeof body?.error === "string" ? body.error : fallbackMessage);
+  }
+  return body as T;
+}
+
 const formatDate = (value: string | null) => (value ? new Date(value).toLocaleString() : "—");
 
 export const AdminRolesPanel = () => {
@@ -66,7 +74,10 @@ export const AdminRolesPanel = () => {
     if (search) params.set("search", search);
 
     try {
-      const response = await fetch(`/api/admin/roles?${params.toString()}`).then((res) => res.json());
+      const response = await parseJsonOrThrow<RolesResponse>(
+        await fetch(`/api/admin/roles?${params.toString()}`),
+        "Failed to load roles."
+      );
       setData({
         rows: response.rows ?? [],
         meta: response.meta ?? { page: 1, pageSize: 20, total: 0, totalPages: 1 },

@@ -139,7 +139,7 @@ export const AdminArticleEditor = ({ mode, categories, initialArticle, onSave, o
           </label>
         </div>
 
-        <div className="test-selector" style={{ marginTop: 0 }}>
+        <div className="test-selector admin-editor-locale-tabs">
           <button
             type="button"
             className="test-selector-tab"
