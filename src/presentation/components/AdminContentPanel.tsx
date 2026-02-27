@@ -298,12 +298,15 @@ export const AdminContentPanel = () => {
   const updateArticlePublished = async (id: string, isPublished: boolean) => {
     setArticleStatusSavingById((prev) => ({ ...prev, [id]: true }));
     try {
-      const response = await fetch(`/api/admin/content/articles/${id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ isPublished }),
-      });
-      await ensureOk(response, "Failed to update article status");
+      await fetchAdminJson<{ ok: boolean }>(
+        `/api/admin/content/articles/${id}`,
+        {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ isPublished }),
+        },
+        "Failed to update article status"
+      );
       setArticles((prev) =>
         prev.map((article) =>
           article.id === id

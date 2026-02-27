@@ -110,15 +110,15 @@ export const AdminLeadsPanel = () => {
   const updateStatus = async (id: string, status: Lead["status"]) => {
     setStatusSavingById((prev) => ({ ...prev, [id]: true }));
     try {
-      const response = await fetch(`/api/admin/leads/${id}/status`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status }),
-      });
-
-      if (!response.ok) {
-        throw new Error("Status update failed");
-      }
+      await fetchAdminJson<{ ok: boolean }>(
+        `/api/admin/leads/${id}/status`,
+        {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ status }),
+        },
+        "Status update failed"
+      );
 
       setData((prev) => ({
         ...prev,
