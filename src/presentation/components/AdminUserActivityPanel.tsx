@@ -1,8 +1,9 @@
 "use client";
 
-import { Fragment, useEffect, useMemo, useState } from "react";
+import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AdminMobileCard } from "@/presentation/components/admin/AdminMobileCard";
 import { AdminPagination } from "@/presentation/components/admin/AdminPagination";
+import { fetchAdminJson, isAbortError } from "@/presentation/components/admin/fetchAdminJson";
 import { AdminRowExpand } from "@/presentation/components/admin/AdminRowExpand";
 import { AdminStatusBadge } from "@/presentation/components/admin/AdminStatusBadge";
 import { AdminTable } from "@/presentation/components/admin/AdminTable";
@@ -50,14 +51,6 @@ type PagedResponse = {
   };
 };
 
-async function parseJsonOrThrow<T>(response: Response, fallbackMessage: string): Promise<T> {
-  const body = await response.json().catch(() => ({}));
-  if (!response.ok) {
-    throw new Error(typeof body?.error === "string" ? body.error : fallbackMessage);
-  }
-  return body as T;
-}
-
 const formatDate = (value: string | null) => {
   if (!value) return "—";
   return new Date(value).toLocaleString();
@@ -79,6 +72,7 @@ export const AdminUserActivityPanel = () => {
   const [expandedUserId, setExpandedUserId] = useState<string | null>(null);
   const [detailsByUserId, setDetailsByUserId] = useState<Record<string, UserActivityDetails>>({});
   const [detailsLoading, setDetailsLoading] = useState<Record<string, boolean>>({});
+  const loadRequestIdRef = useRef(0);
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
@@ -89,47 +83,60 @@ export const AdminUserActivityPanel = () => {
     return () => window.clearTimeout(timer);
   }, [searchInput]);
 
-  useEffect(() => {
-    const load = async () => {
-      setLoading(true);
-      const params = new URLSearchParams({
-        page: String(page),
-        pageSize: "20",
-        sortBy,
-        sortDir,
-      });
-      if (search) params.set("search", search);
+  const load = useCallback(async (signal?: AbortSignal) => {
+    const requestId = ++loadRequestIdRef.current;
+    setLoading(true);
+    const params = new URLSearchParams({
+      page: String(page),
+      pageSize: "20",
+      sortBy,
+      sortDir,
+    });
+    if (search) params.set("search", search);
 
-      try {
-        const response = await parseJsonOrThrow<PagedResponse>(
-          await fetch(`/api/admin/user-activity?${params.toString()}`),
-          "Failed to load users activity."
-        );
-        setData({
-          rows: response.rows ?? [],
-          meta: response.meta ?? { page: 1, pageSize: 20, total: 0, totalPages: 1 },
-        });
-      } catch {
-        pushToast({
-          type: "error",
-          title: "Users",
-          message: "Failed to load users activity.",
-        });
-      } finally {
+    try {
+      const response = await fetchAdminJson<PagedResponse>(
+        `/api/admin/user-activity?${params.toString()}`,
+        { signal },
+        "Failed to load users activity."
+      );
+      if (requestId !== loadRequestIdRef.current) {
+        return;
+      }
+      setData({
+        rows: response.rows ?? [],
+        meta: response.meta ?? { page: 1, pageSize: 20, total: 0, totalPages: 1 },
+      });
+    } catch (error) {
+      if (isAbortError(error)) {
+        return;
+      }
+      pushToast({
+        type: "error",
+        title: "Users",
+        message: "Failed to load users activity.",
+      });
+    } finally {
+      if (requestId === loadRequestIdRef.current) {
         setLoading(false);
       }
-    };
+    }
+  }, [page, search, sortBy, sortDir, pushToast]);
 
-    void load();
-  }, [page, pushToast, search, sortBy, sortDir]);
+  useEffect(() => {
+    const controller = new AbortController();
+    void load(controller.signal);
+    return () => controller.abort();
+  }, [load]);
 
   const loadDetails = async (userId: string) => {
     if (detailsByUserId[userId]) return;
     setDetailsLoading((prev) => ({ ...prev, [userId]: true }));
 
     try {
-      const response = await parseJsonOrThrow<UserActivityDetails>(
-        await fetch(`/api/admin/user-activity/${userId}/details?testsLimit=5&leadsLimit=5`),
+      const response = await fetchAdminJson<UserActivityDetails>(
+        `/api/admin/user-activity/${userId}/details?testsLimit=5&leadsLimit=5`,
+        undefined,
         "Failed to load user details."
       );
       setDetailsByUserId((prev) => ({
@@ -216,12 +223,14 @@ export const AdminUserActivityPanel = () => {
                   <td>{row.leadsCount}</td>
                   <td><span className="admin-cell-ellipsis">{formatDate(row.lastActivityAt)}</span></td>
                   <td>
-                    <AdminRowExpand
-                      expanded={expanded}
-                      onToggle={() => void toggleExpand(row.userId)}
-                      label="View"
-                      testId={`admin-user-row-expand-${index}`}
-                    />
+                    <div className="admin-row-actions">
+                      <AdminRowExpand
+                        expanded={expanded}
+                        onToggle={() => void toggleExpand(row.userId)}
+                        label="View"
+                        testId={`admin-user-row-expand-${index}`}
+                      />
+                    </div>
                   </td>
                 </tr>
                 {expanded ? (

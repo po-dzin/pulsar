@@ -4,8 +4,8 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { ConfirmDialog } from "@/presentation/components/ConfirmDialog";
 import { AdminArticleEditor } from "@/presentation/components/AdminArticleEditor";
 import { AdminMobileCard } from "@/presentation/components/admin/AdminMobileCard";
-import { AdminStatusBadge } from "@/presentation/components/admin/AdminStatusBadge";
 import { AdminTable } from "@/presentation/components/admin/AdminTable";
+import { fetchAdminJson } from "@/presentation/components/admin/fetchAdminJson";
 import { useAdminToasts } from "@/presentation/components/admin/useAdminToasts";
 import type { KbArticleInput, KbArticleRow, KbCategoryInput, KbCategoryRow } from "@/application/ports/repositories";
 
@@ -43,6 +43,7 @@ export const AdminContentPanel = () => {
   const [categories, setCategories] = useState<KbCategoryRow[]>([]);
   const [articles, setArticles] = useState<KbArticleRow[]>([]);
   const [busy, setBusy] = useState(false);
+  const [articleStatusSavingById, setArticleStatusSavingById] = useState<Record<string, boolean>>({});
   const [confirmState, setConfirmState] = useState<ConfirmState>(null);
 
   const [editorMode, setEditorMode] = useState<"list" | "create" | "edit">("list");
@@ -146,33 +147,40 @@ export const AdminContentPanel = () => {
       return;
     }
 
+    const previousCategories = categories.map((category) => ({ ...category }));
+    setCategories((prev) =>
+      prev.map((category) => {
+        if (category.id === target.id) {
+          return { ...category, sortOrder: swapWith.sortOrder };
+        }
+        if (category.id === swapWith.id) {
+          return { ...category, sortOrder: target.sortOrder };
+        }
+        return category;
+      })
+    );
+
     setBusy(true);
     try {
-      const [targetResponse, swapResponse] = await Promise.all([
-        fetch(`/api/admin/content/categories/${target.id}`, {
-          method: "PATCH",
+      await fetchAdminJson<{ ok: boolean }>(
+        "/api/admin/content/categories/reorder",
+        {
+          method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ sortOrder: swapWith.sortOrder }),
-        }),
-        fetch(`/api/admin/content/categories/${swapWith.id}`, {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ sortOrder: target.sortOrder }),
-        }),
-      ]);
-
-      await Promise.all([
-        ensureOk(targetResponse, "Failed to reorder category"),
-        ensureOk(swapResponse, "Failed to reorder category"),
-      ]);
-
-      await load();
+          body: JSON.stringify({
+            categoryId: target.id,
+            swapWithCategoryId: swapWith.id,
+          }),
+        },
+        "Failed to reorder category"
+      );
       pushToast({
         type: "success",
         title: "Categories",
         message: "Category order updated.",
       });
     } catch (error) {
+      setCategories(previousCategories);
       pushToast({
         type: "error",
         title: "Categories",
@@ -284,6 +292,42 @@ export const AdminContentPanel = () => {
       });
     } finally {
       setBusy(false);
+    }
+  };
+
+  const updateArticlePublished = async (id: string, isPublished: boolean) => {
+    setArticleStatusSavingById((prev) => ({ ...prev, [id]: true }));
+    try {
+      const response = await fetch(`/api/admin/content/articles/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ isPublished }),
+      });
+      await ensureOk(response, "Failed to update article status");
+      setArticles((prev) =>
+        prev.map((article) =>
+          article.id === id
+            ? {
+                ...article,
+                isPublished,
+                updatedAt: new Date().toISOString(),
+              }
+            : article
+        )
+      );
+      pushToast({
+        type: "success",
+        title: "Articles",
+        message: "Article status updated.",
+      });
+    } catch (error) {
+      pushToast({
+        type: "error",
+        title: "Articles",
+        message: getErrorMessage(error, "Failed to update article status."),
+      });
+    } finally {
+      setArticleStatusSavingById((prev) => ({ ...prev, [id]: false }));
     }
   };
 
@@ -408,7 +452,16 @@ export const AdminContentPanel = () => {
                     <td><span className="admin-cell-ellipsis">{article.slug}</span></td>
                     <td><span className="admin-cell-ellipsis">{categoryById.get(article.categoryId)?.titleEn ?? "Unknown category"}</span></td>
                     <td>
-                      <AdminStatusBadge label={article.isPublished ? "published" : "draft"} tone={article.isPublished ? "success" : "neutral"} />
+                      <select
+                        className="select admin-table-control"
+                        value={article.isPublished ? "published" : "draft"}
+                        onChange={(event) => void updateArticlePublished(article.id, event.target.value === "published")}
+                        disabled={busy || Boolean(articleStatusSavingById[article.id])}
+                        data-testid={`admin-kb-article-status-select-${index}`}
+                      >
+                        <option value="draft">draft</option>
+                        <option value="published">published</option>
+                      </select>
                     </td>
                     <td><span className="admin-cell-ellipsis">{formatDate(article.updatedAt ?? article.publishedAt)}</span></td>
                     <td>
@@ -453,7 +506,16 @@ export const AdminContentPanel = () => {
                     showToggle={false}
                     actions={
                       <div className="admin-mobile-inline">
-                        <AdminStatusBadge label={article.isPublished ? "published" : "draft"} tone={article.isPublished ? "success" : "neutral"} />
+                        <select
+                          className="select admin-table-control"
+                          value={article.isPublished ? "published" : "draft"}
+                          onChange={(event) => void updateArticlePublished(article.id, event.target.value === "published")}
+                          disabled={busy || Boolean(articleStatusSavingById[article.id])}
+                          data-testid={`admin-kb-article-status-select-mobile-${index}`}
+                        >
+                          <option value="draft">draft</option>
+                          <option value="published">published</option>
+                        </select>
                         <button
                           type="button"
                           className="button button-muted admin-table-action-btn"

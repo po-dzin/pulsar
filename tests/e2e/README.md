@@ -5,12 +5,12 @@
 ## Набор
 1. `smoke.spec.ts` - публичные маршруты, дисклеймер, auth gate.
 2. `navigation-ui.spec.ts` - язык, тема, мобильное burger-меню.
-3. `diagnostics-psychosomatic.spec.ts` - guest флоу + восстановление pending guest попытки после входа (pre-auth).
-4. `diagnostics-physical.spec.ts` - полный guest happy-path физического теста.
+3. `diagnostics-psychosomatic.spec.ts` - guest auth-gate + authenticated consent/start/restart/pending save.
+4. `diagnostics-physical.spec.ts` - guest auth-gate + authenticated happy-path физического теста.
 5. `products-knowledge.spec.ts` - продукты/заявка + чтение статьи БЗ.
 6. `profile-auth.spec.ts` - кабинет, история тестов, фильтры, PDF-скачивание (pre-auth).
 7. `admin-basic.spec.ts` - админ-панель и смена статуса лида (admin pre-auth).
-8. `admin-content-crud.spec.ts` - full CRUD контур БЗ в админке: create/preview/publish/archive.
+8. `admin-content-crud.spec.ts` - full CRUD контур БЗ в админке: create/preview/publish/delete + reorder categories.
 
 ## Быстрый запуск
 ```bash

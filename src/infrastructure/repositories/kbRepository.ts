@@ -148,6 +148,17 @@ export class SupabaseKbRepository implements KbRepositoryPort {
     return mapCategory(data as KbCategoryDbRow);
   }
 
+  async swapCategorySortOrder(firstCategoryId: string, secondCategoryId: string): Promise<void> {
+    const { error } = await this.supabase.rpc("swap_kb_category_sort_order", {
+      p_first: firstCategoryId,
+      p_second: secondCategoryId,
+    });
+
+    if (error) {
+      throw error;
+    }
+  }
+
   async archiveCategory(id: string): Promise<void> {
     const { error } = await this.supabase
       .from("kb_categories")

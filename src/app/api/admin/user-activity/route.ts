@@ -1,13 +1,7 @@
 import { NextResponse } from "next/server";
 import { createRuntime } from "@/infrastructure/repositories/factory/createRuntime";
 import { requireAdminRole, requireAuthenticatedUser } from "@/infrastructure/supabase/authz";
-
-const parseNumber = (raw: string | null, fallback: number): number => {
-  if (!raw) return fallback;
-  const value = Number(raw);
-  if (!Number.isFinite(value)) return fallback;
-  return value;
-};
+import { parseClampedInt } from "@/app/api/admin/_utils/query";
 
 export async function GET(request: Request) {
   try {
@@ -17,8 +11,8 @@ export async function GET(request: Request) {
 
     const { searchParams } = new URL(request.url);
 
-    const page = parseNumber(searchParams.get("page"), 1);
-    const pageSize = parseNumber(searchParams.get("pageSize"), 20);
+    const page = parseClampedInt(searchParams.get("page"), { fallback: 1, min: 1, max: 10_000 });
+    const pageSize = parseClampedInt(searchParams.get("pageSize"), { fallback: 20, min: 1, max: 100 });
     const search = searchParams.get("search") ?? undefined;
     const sortByRaw = searchParams.get("sortBy");
     const sortDirRaw = searchParams.get("sortDir");
