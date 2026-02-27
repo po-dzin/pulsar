@@ -62,9 +62,11 @@ export default async function DiagnosticsPage({
           toProducts: context.dictionary.result.toProducts,
           toKnowledge: context.dictionary.result.toKnowledge,
           historyTitle: context.dictionary.diagnostics.history,
-          guestModeNotice: context.dictionary.diagnostics.guestModeNotice,
           historyGuestEmpty: context.dictionary.diagnostics.historyGuestEmpty,
-          savePrompt: context.dictionary.diagnostics.savePrompt,
+          authRequiredToStart: context.dictionary.diagnostics.authRequiredToStart,
+          signIn: context.dictionary.auth.google,
+          saveResult: context.locale === "ru" ? "Сохранить результат" : "Save result",
+          saveResultLoading: context.locale === "ru" ? "Сохранение..." : "Saving...",
           testSelectorPsychosomatic: context.dictionary.diagnostics.testSelector.psychosomatic,
           testSelectorPhysical: context.dictionary.diagnostics.testSelector.physical,
         }}

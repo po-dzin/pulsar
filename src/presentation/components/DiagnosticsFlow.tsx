@@ -1,9 +1,8 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import type { Locale, AnswerValue, PsychoAnswers, PsychoScore } from "@/domain/psychosomatic/model";
 import { psychosomaticQuestions, getQuestionOptions, levelLabels, zoneLabels } from "@/domain/psychosomatic/questions";
-import { scorePsychosomatic } from "@/domain/psychosomatic/scoring";
 import { getSupabaseBrowserClient } from "@/infrastructure/supabase/client";
 import { PhysicalDiagnosticsFlow } from "@/presentation/components/PhysicalDiagnosticsFlow";
 
@@ -26,9 +25,11 @@ type Props = {
     toProducts: string;
     toKnowledge: string;
     historyTitle: string;
-    guestModeNotice: string;
     historyGuestEmpty: string;
-    savePrompt: string;
+    authRequiredToStart: string;
+    signIn: string;
+    saveResult: string;
+    saveResultLoading: string;
     testSelectorPsychosomatic: string;
     testSelectorPhysical: string;
   };
@@ -38,14 +39,6 @@ type Props = {
 };
 
 const orderedAnswers: AnswerValue[] = ["none", "rare", "sometimes", "often"];
-const pendingGuestAttemptKey = "impulse_psychosomatic_pending_v1";
-
-type PendingGuestAttempt = {
-  sessionId: string;
-  answers: PsychoAnswers;
-  consentAcceptedAt?: string;
-  completedAt: string;
-};
 
 export const DiagnosticsFlow = ({ isAuthenticated, locale, labels, productsHref, knowledgeHref, initialHistory }: Props) => {
   const [activeFlow, setActiveFlow] = useState<"psychosomatic" | "physical">("psychosomatic");
@@ -65,68 +58,6 @@ export const DiagnosticsFlow = ({ isAuthenticated, locale, labels, productsHref,
     setBusy(false);
   };
   const questionRefs = useRef<Map<number, HTMLElement>>(new Map());
-
-  const persistGuestAttempt = useCallback((payload: PendingGuestAttempt) => {
-    try {
-      window.localStorage.setItem(pendingGuestAttemptKey, JSON.stringify(payload));
-    } catch {
-      // localStorage unavailable; keep guest-only in-memory result.
-    }
-  }, []);
-
-  useEffect(() => {
-    if (!isAuthenticated || result) {
-      return;
-    }
-
-    let cancelled = false;
-
-    const restoreGuestAttempt = async () => {
-      try {
-        const raw = window.localStorage.getItem(pendingGuestAttemptKey);
-        if (!raw) {
-          return;
-        }
-
-        const pending = JSON.parse(raw) as PendingGuestAttempt;
-        if (!pending?.sessionId || !pending?.answers) {
-          window.localStorage.removeItem(pendingGuestAttemptKey);
-          return;
-        }
-
-        setBusy(true);
-        const response = await fetch("/api/diagnostics/psychosomatic/complete", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            sessionId: pending.sessionId,
-            answers: pending.answers,
-            consentAcceptedAt: pending.consentAcceptedAt,
-          }),
-        });
-
-        const data = await response.json().catch(() => ({}));
-        if (!cancelled && response.ok && data.result) {
-          setResult(data.result as PsychoScore);
-          setStarted(false);
-          setAnswers({});
-          window.localStorage.removeItem(pendingGuestAttemptKey);
-        }
-      } catch {
-        // ignore restore errors silently
-      } finally {
-        if (!cancelled) {
-          setBusy(false);
-        }
-      }
-    };
-
-    void restoreGuestAttempt();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [isAuthenticated, result]);
 
   const answeredCount = useMemo(
     () => psychosomaticQuestions.filter((q) => answers[q.key] !== undefined).length,
@@ -174,21 +105,12 @@ export const DiagnosticsFlow = ({ isAuthenticated, locale, labels, productsHref,
   const handleSubmit = async () => {
     if (!allAnswered) return;
 
-    const payloadAnswers = answers as PsychoAnswers;
-
     if (!isAuthenticated) {
-      const localResult = scorePsychosomatic(payloadAnswers);
-      if (localResult.ok) {
-        setResult(localResult.value);
-        persistGuestAttempt({
-          sessionId,
-          answers: payloadAnswers,
-          consentAcceptedAt: consent ? new Date().toISOString() : undefined,
-          completedAt: new Date().toISOString(),
-        });
-      }
+      await signIn();
       return;
     }
+
+    const payloadAnswers = answers as PsychoAnswers;
 
     setBusy(true);
     try {
@@ -204,11 +126,6 @@ export const DiagnosticsFlow = ({ isAuthenticated, locale, labels, productsHref,
       const data = await response.json();
       if (response.ok && data.result) {
         setResult(data.result as PsychoScore);
-        try {
-          window.localStorage.removeItem(pendingGuestAttemptKey);
-        } catch {
-          // noop
-        }
       }
     } finally {
       setBusy(false);
@@ -238,7 +155,16 @@ export const DiagnosticsFlow = ({ isAuthenticated, locale, labels, productsHref,
             {labels.testSelectorPhysical}
           </button>
         </div>
-        <PhysicalDiagnosticsFlow isAuthenticated={isAuthenticated} locale={locale} />
+        <PhysicalDiagnosticsFlow
+          isAuthenticated={isAuthenticated}
+          locale={locale}
+          productsHref={productsHref}
+          consultationLabel={labels.toProducts}
+          signInLabel={labels.signIn}
+          authRequiredToStartLabel={labels.authRequiredToStart}
+          saveResultLabel={labels.saveResult}
+          saveResultLoadingLabel={labels.saveResultLoading}
+        />
       </>
     );
   }
@@ -306,21 +232,6 @@ export const DiagnosticsFlow = ({ isAuthenticated, locale, labels, productsHref,
             ))}
           </div>
 
-          {!isAuthenticated ? (
-            <div className="card" style={{ padding: 16, marginTop: 16, border: '1px solid var(--color-accent-dim)' }}>
-              <p style={{ margin: 0, color: 'var(--color-text)', marginBottom: 16 }}>{labels.guestModeNotice}</p>
-              <button
-                type="button"
-                className="button button-accent"
-                onClick={signIn}
-                disabled={busy}
-                data-testid="psych-result-signin-button"
-              >
-                {locale === "ru" ? "Войти" : "Sign in"}
-              </button>
-            </div>
-          ) : null}
-
           <div className="inline-row" style={{ marginTop: 16 }}>
             <a href={productsHref} className="button button-primary" data-testid="cta-go-products">
               {labels.toProducts}
@@ -372,27 +283,44 @@ export const DiagnosticsFlow = ({ isAuthenticated, locale, labels, productsHref,
           <h2>{labels.testSelectorPsychosomatic}</h2>
           <p style={{ whiteSpace: "pre-line" }}>{labels.description}</p>
 
-          <label className="consent-row" data-selected={consent}>
-            <input
-              type="checkbox"
-              checked={consent}
-              onChange={(e) => setConsent(e.target.checked)}
-              data-testid="consent-checkbox"
-            />
-            <span>{labels.consent}</span>
-          </label>
+          {!isAuthenticated ? (
+            <div className="inline-row" style={{ marginTop: 12 }}>
+              <p className="muted" style={{ width: "100%", marginBottom: 8 }}>{labels.authRequiredToStart}</p>
+              <button
+                type="button"
+                className="button button-primary"
+                onClick={() => void signIn()}
+                disabled={busy}
+                data-testid="start-psychotest-button"
+              >
+                {labels.signIn}
+              </button>
+            </div>
+          ) : (
+            <>
+              <label className="consent-row" data-selected={consent}>
+                <input
+                  type="checkbox"
+                  checked={consent}
+                  onChange={(e) => setConsent(e.target.checked)}
+                  data-testid="consent-checkbox"
+                />
+                <span>{labels.consent}</span>
+              </label>
 
-          <div className="inline-row" style={{ marginTop: 12 }}>
-            <button
-              type="button"
-              className="button button-primary"
-              onClick={() => setStarted(true)}
-              disabled={!consent}
-              data-testid="start-psychotest-button"
-            >
-              {labels.start}
-            </button>
-          </div>
+              <div className="inline-row" style={{ marginTop: 12 }}>
+                <button
+                  type="button"
+                  className="button button-primary"
+                  onClick={() => setStarted(true)}
+                  disabled={!consent}
+                  data-testid="start-psychotest-button"
+                >
+                  {labels.start}
+                </button>
+              </div>
+            </>
+          )}
         </section>
       </>
     );

@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import type { Locale } from "@/domain/psychosomatic/model";
 import { getSupabaseBrowserClient } from "@/infrastructure/supabase/client";
 import { physicalCategoryTitles, physicalTestByKey, physicalTests } from "@/domain/physical/catalog";
@@ -12,11 +12,9 @@ import type {
   PhysicalRiskFlag,
   PhysicalTestDefinition,
 } from "@/domain/physical/model";
-import { scorePhysicalFullTest } from "@/domain/physical/scoring";
 import { derivePhysicalLevel } from "@/domain/physical/interpretation";
 import { physicalLevelMeta } from "@/domain/physical/levelMeta";
-
-const pendingGuestAttemptKey = "impulse_physical_full_pending_v1";
+import { PrintPdfButton } from "@/presentation/components/PrintPdfButton";
 
 const categoryVisual: Record<PhysicalCategoryKey, { icon: string; accent: string }> = {
   breathing: { icon: "🫁", accent: "var(--level-excellent)" },
@@ -36,7 +34,7 @@ const riskFlagLabels: Record<PhysicalRiskFlag, Record<Locale, string>> = {
     en: "❗ Critical breathing imbalance (ratio <1.0 or >2.8)",
   },
   zone5_leg_swings: {
-    ru: "⚠️ Зона 5 после Leg Swings",
+    ru: "⚠️ Зона 5 после Махов ногами",
     en: "⚠️ Zone 5 after Leg Swings",
   },
   shoulder_asymmetry: {
@@ -53,16 +51,15 @@ const riskFlagLabels: Record<PhysicalRiskFlag, Record<Locale, string>> = {
   },
 };
 
-type PendingPhysicalAttempt = {
-  sessionId: string;
-  answers: PhysicalAnswers;
-  consentAcceptedAt?: string;
-  completedAt: string;
-};
-
 type Props = {
   isAuthenticated: boolean;
   locale: Locale;
+  productsHref: string;
+  consultationLabel: string;
+  signInLabel: string;
+  authRequiredToStartLabel: string;
+  saveResultLabel: string;
+  saveResultLoadingLabel: string;
 };
 
 const getCurrentCategoryTests = (category: PhysicalCategoryKey) =>
@@ -74,7 +71,16 @@ const isTestCompleted = (answers: Record<string, string>, test: PhysicalTestDefi
     return typeof value === "string" && value.trim().length > 0;
   });
 
-export const PhysicalDiagnosticsFlow = ({ isAuthenticated, locale }: Props) => {
+export const PhysicalDiagnosticsFlow = ({
+  isAuthenticated,
+  locale,
+  productsHref,
+  consultationLabel,
+  signInLabel,
+  authRequiredToStartLabel,
+  saveResultLabel,
+  saveResultLoadingLabel,
+}: Props) => {
   const [consent, setConsent] = useState(false);
   const [started, setStarted] = useState(false);
   const [answers, setAnswers] = useState<Record<string, string>>({});
@@ -107,66 +113,6 @@ export const PhysicalDiagnosticsFlow = ({ isAuthenticated, locale }: Props) => {
     await supabase.auth.signInWithOAuth({ provider: "google", options: { redirectTo } });
     setBusy(false);
   };
-
-  const persistGuestAttempt = useCallback((payload: PendingPhysicalAttempt) => {
-    try {
-      window.localStorage.setItem(pendingGuestAttemptKey, JSON.stringify(payload));
-    } catch {
-      // noop
-    }
-  }, []);
-
-  useEffect(() => {
-    if (!isAuthenticated || result) {
-      return;
-    }
-
-    let cancelled = false;
-
-    const restoreGuestAttempt = async () => {
-      try {
-        const raw = window.localStorage.getItem(pendingGuestAttemptKey);
-        if (!raw) return;
-        const pending = JSON.parse(raw) as PendingPhysicalAttempt;
-        if (!pending.sessionId || !pending.answers) {
-          window.localStorage.removeItem(pendingGuestAttemptKey);
-          return;
-        }
-
-        setBusy(true);
-        const response = await fetch("/api/diagnostics/physical/complete", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            sessionId: pending.sessionId,
-            answers: pending.answers,
-            consentAcceptedAt: pending.consentAcceptedAt,
-          }),
-        });
-
-        const data = await response.json().catch(() => ({}));
-        if (!cancelled && response.ok && data.result) {
-          setResult(data.result as PhysicalFullScore);
-          setStarted(false);
-          setAnswers({});
-          setCurrentIndex(0);
-          window.localStorage.removeItem(pendingGuestAttemptKey);
-        }
-      } catch {
-        // noop
-      } finally {
-        if (!cancelled) {
-          setBusy(false);
-        }
-      }
-    };
-
-    void restoreGuestAttempt();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [isAuthenticated, result]);
 
   const saveDraftIfNeeded = async (questionKey: string, answerValue: string) => {
     if (!isAuthenticated || !answerValue) {
@@ -245,17 +191,7 @@ export const PhysicalDiagnosticsFlow = ({ isAuthenticated, locale }: Props) => {
     const payloadAnswers = answers as PhysicalAnswers;
 
     if (!isAuthenticated) {
-      const local = scorePhysicalFullTest(payloadAnswers);
-      if (local.ok) {
-        setResult(local.value);
-        setCommittedTests(physicalTests.length);
-        persistGuestAttempt({
-          sessionId,
-          answers: payloadAnswers,
-          consentAcceptedAt: consent ? new Date().toISOString() : undefined,
-          completedAt: new Date().toISOString(),
-        });
-      }
+      await signIn();
       return;
     }
 
@@ -274,11 +210,6 @@ export const PhysicalDiagnosticsFlow = ({ isAuthenticated, locale }: Props) => {
       if (response.ok && data.result) {
         setResult(data.result as PhysicalFullScore);
         setCommittedTests(physicalTests.length);
-        try {
-          window.localStorage.removeItem(pendingGuestAttemptKey);
-        } catch {
-          // noop
-        }
       }
     } finally {
       setBusy(false);
@@ -339,7 +270,7 @@ export const PhysicalDiagnosticsFlow = ({ isAuthenticated, locale }: Props) => {
 
   if (result) {
     return (
-      <section className="diagnostics-result" data-testid="physical-result-card">
+      <section id="physical-result-export" className="diagnostics-result" data-testid="physical-result-card">
         <h2>{locale === "ru" ? "Итог физической диагностики" : "Physical diagnostics summary"}</h2>
         <p>
           {locale === "ru" ? "Общий результат" : "Overall result"}: <strong>{result.overallPct}%</strong>
@@ -380,29 +311,20 @@ export const PhysicalDiagnosticsFlow = ({ isAuthenticated, locale }: Props) => {
           ))}
         </div>
 
-        {!isAuthenticated ? (
-          <div className="card" style={{ padding: 16, marginTop: 12, border: "1px solid var(--color-accent-dim)" }}>
-            <p className="muted" style={{ marginTop: 0 }}>
-              {locale === "ru"
-                ? "Войди, чтобы сохранить результат в профиль и отслеживать прогресс."
-                : "Sign in to save this result to profile and track progress."}
-            </p>
-            <button
-              type="button"
-              className="button button-accent"
-              onClick={signIn}
-              disabled={busy}
-              data-testid="physical-signin-button"
-            >
-              {locale === "ru" ? "Войти / Регистрация" : "Sign in / Register"}
-            </button>
-          </div>
-        ) : null}
-
         <div className="inline-row" style={{ marginTop: 12 }}>
-          <button type="button" className="button button-primary" onClick={restart} data-testid="physical-retry">
+          <a href={productsHref} className="button button-primary" data-testid="physical-cta-products">
+            {consultationLabel}
+          </a>
+          <button type="button" className="button button-muted" onClick={restart} data-testid="physical-retry">
             {locale === "ru" ? "Пройти заново" : "Retry full test"}
           </button>
+          <PrintPdfButton
+            label={saveResultLabel}
+            loadingLabel={saveResultLoadingLabel}
+            targetId="physical-result-export"
+            filename={locale === "ru" ? "Impulse_Physical_Result.pdf" : "Impulse_Physical_Result_EN.pdf"}
+            testId="physical-save-result-button"
+          />
         </div>
       </section>
     );
@@ -426,35 +348,52 @@ export const PhysicalDiagnosticsFlow = ({ isAuthenticated, locale }: Props) => {
           <li>{categoryVisual.coordination_balance.icon} {physicalCategoryTitles.coordination_balance[locale]}</li>
         </ul>
 
-        <label className="consent-row" data-selected={consent}>
-          <input
-            type="checkbox"
-            checked={consent}
-            onChange={(e) => setConsent(e.target.checked)}
-            data-testid="physical-consent-checkbox"
-          />
-          <span>
-            {locale === "ru"
-              ? "Я согласен(на) на обработку диагностических данных для хранения результата и отслеживания прогресса."
-              : "I consent to processing diagnostics data for storing results and tracking progress."}
-          </span>
-        </label>
+        {!isAuthenticated ? (
+          <div className="inline-row" style={{ marginTop: 12 }}>
+            <p className="muted" style={{ width: "100%", marginBottom: 8 }}>{authRequiredToStartLabel}</p>
+            <button
+              type="button"
+              className="button button-primary"
+              onClick={() => void signIn()}
+              disabled={busy}
+              data-testid="physical-signin-button"
+            >
+              {signInLabel}
+            </button>
+          </div>
+        ) : (
+          <>
+            <label className="consent-row" data-selected={consent}>
+              <input
+                type="checkbox"
+                checked={consent}
+                onChange={(e) => setConsent(e.target.checked)}
+                data-testid="physical-consent-checkbox"
+              />
+              <span>
+                {locale === "ru"
+                  ? "Я согласен(на) на обработку диагностических данных для хранения результата и отслеживания прогресса."
+                  : "I consent to processing diagnostics data for storing results and tracking progress."}
+              </span>
+            </label>
 
-        <div className="inline-row" style={{ marginTop: 12 }}>
-          <button
-            type="button"
-            className="button button-primary"
-            onClick={() => {
-              setStarted(true);
-              setCurrentIndex(0);
-              setCommittedTests(0);
-            }}
-            disabled={!consent}
-            data-testid="physical-start-button"
-          >
-            {locale === "ru" ? "Начать тест" : "Start test"}
-          </button>
-        </div>
+            <div className="inline-row" style={{ marginTop: 12 }}>
+              <button
+                type="button"
+                className="button button-primary"
+                onClick={() => {
+                  setStarted(true);
+                  setCurrentIndex(0);
+                  setCommittedTests(0);
+                }}
+                disabled={!consent}
+                data-testid="physical-start-button"
+              >
+                {locale === "ru" ? "Начать тест" : "Start test"}
+              </button>
+            </div>
+          </>
+        )}
       </section>
     );
   }
