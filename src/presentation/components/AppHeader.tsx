@@ -11,7 +11,7 @@ import { UserMenu } from "@/presentation/components/UserMenu";
 import { ThemeToggle } from "@/presentation/components/ThemeToggle";
 import { BrandLogo } from "@/presentation/components/BrandLogo";
 import { UiModeToggle } from "@/presentation/components/UiModeToggle";
-import { getSupabaseBrowserClient } from "@/infrastructure/supabase/client";
+import { signInWithGoogle, signOutBrowserUser } from "@/infrastructure/supabase/client";
 
 const navItems = [
   { key: "mission", path: "/" },
@@ -62,21 +62,25 @@ export const AppHeader = ({
 
   const signIn = async () => {
     setBusy(true);
-    const supabase = getSupabaseBrowserClient();
-    const nextPath = `${window.location.pathname}${window.location.search}`;
-    const redirectTo = `${window.location.origin}/auth/callback?next=${encodeURIComponent(nextPath)}`;
-    await supabase.auth.signInWithOAuth({
-      provider: "google",
-      options: { redirectTo, queryParams: { prompt: "select_account" } },
-    });
-    setBusy(false);
+    try {
+      const nextPath = `${window.location.pathname}${window.location.search}`;
+      const redirectTo = `${window.location.origin}/auth/callback?next=${encodeURIComponent(nextPath)}`;
+      await signInWithGoogle(redirectTo);
+    } finally {
+      setBusy(false);
+    }
   };
 
   const signOut = async () => {
     setBusy(true);
-    const supabase = getSupabaseBrowserClient();
-    await supabase.auth.signOut();
-    window.location.assign("/");
+    try {
+      const ok = await signOutBrowserUser();
+      if (ok) {
+        window.location.assign("/");
+      }
+    } finally {
+      setBusy(false);
+    }
   };
 
   const userMenuProps = {
@@ -94,7 +98,7 @@ export const AppHeader = ({
     : "?";
 
   return (
-    <header className="topbar">
+    <header className="topbar" data-menu-open={isOpen || undefined}>
       <div className="topbar-inner">
         {/* Brand + desktop nav */}
         <div className="topbar-nav">
@@ -127,7 +131,10 @@ export const AppHeader = ({
         {/* Burger Button (Mobile) */}
         <button
           className="burger-btn mobile-only"
-          onClick={() => setIsOpen(!isOpen)}
+          onClick={(event) => {
+            setIsOpen(!isOpen);
+            event.currentTarget.blur();
+          }}
           aria-label="Toggle mobile menu"
           aria-expanded={isOpen}
           data-testid="burger-toggle"
@@ -183,7 +190,7 @@ export const AppHeader = ({
           {isAuthenticated ? (
             <div className="mobile-profile-section">
               <div className="mobile-profile-identity">
-                <span className="avatar-btn" style={{ width: 34, height: 34, pointerEvents: "none" }}>
+                <span className="avatar-btn mobile-avatar-static">
                   {avatarUrl ? (
                     <Image
                       src={avatarUrl}
@@ -205,15 +212,13 @@ export const AppHeader = ({
               <div className="mobile-profile-actions">
                 <Link
                   href={withLang("/profile", locale)}
-                  className="button button-muted"
-                  style={{ flex: 1, textAlign: "center" }}
+                  className="button button-muted mobile-action-link"
                 >
                   {dictionary.profile.viewProfile}
                 </Link>
                 <button
                   type="button"
-                  className="button button-muted"
-                  style={{ flex: 1 }}
+                  className="button button-muted mobile-action-button"
                   onClick={signOut}
                   disabled={busy}
                 >
@@ -224,10 +229,9 @@ export const AppHeader = ({
           ) : (
             <button
               type="button"
-              className="button button-accent"
+              className="button button-accent mobile-auth-button"
               onClick={signIn}
               disabled={busy}
-              style={{ width: "100%" }}
             >
               {dictionary.auth.google}
             </button>

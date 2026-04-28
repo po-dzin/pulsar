@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { getSupabaseBrowserClient } from "@/infrastructure/supabase/client";
+import { signInWithGoogle, signOutBrowserUser } from "@/infrastructure/supabase/client";
 
 type Props = {
     isAuthenticated: boolean;
@@ -41,21 +41,25 @@ export const UserMenu = ({
 
     const signIn = async () => {
         setBusy(true);
-        const supabase = getSupabaseBrowserClient();
-        const nextPath = `${window.location.pathname}${window.location.search}`;
-        const redirectTo = `${window.location.origin}/auth/callback?next=${encodeURIComponent(nextPath)}`;
-        await supabase.auth.signInWithOAuth({
-            provider: "google",
-            options: { redirectTo, queryParams: { prompt: "select_account" } },
-        });
-        setBusy(false);
+        try {
+            const nextPath = `${window.location.pathname}${window.location.search}`;
+            const redirectTo = `${window.location.origin}/auth/callback?next=${encodeURIComponent(nextPath)}`;
+            await signInWithGoogle(redirectTo);
+        } finally {
+            setBusy(false);
+        }
     };
 
     const signOut = async () => {
         setBusy(true);
-        const supabase = getSupabaseBrowserClient();
-        await supabase.auth.signOut();
-        window.location.assign("/");
+        try {
+            const ok = await signOutBrowserUser();
+            if (ok) {
+                window.location.assign("/");
+            }
+        } finally {
+            setBusy(false);
+        }
     };
 
     if (!isAuthenticated) {

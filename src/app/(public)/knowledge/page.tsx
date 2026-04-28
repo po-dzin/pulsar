@@ -36,7 +36,7 @@ export default async function KnowledgePage({
       <h1 className="page-title">{context.dictionary.knowledge.title}</h1>
       <p className="page-subtitle">{context.dictionary.knowledge.subtitle}</p>
 
-      <div className="test-selector knowledge-category-tabs" style={{ marginTop: "var(--space-4)" }}>
+      <div className="test-selector knowledge-category-tabs knowledge-category-tabs-offset">
         <Link
           href={withLang("/knowledge?category=all", context.locale)}
           className="test-selector-tab"
@@ -69,7 +69,7 @@ export default async function KnowledgePage({
             <article>
               <h3>{article.title}</h3>
               <p className="muted">{article.excerpt}</p>
-              <span className="button button-primary" style={{ display: 'inline-flex', marginTop: '16px' }}>
+              <span className="button button-primary button-page-cta knowledge-card-cta">
                 {context.dictionary.knowledge.open}
               </span>
             </article>

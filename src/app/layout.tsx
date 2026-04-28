@@ -3,8 +3,8 @@ import "./brand-tokens.css";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "IMPULSE",
-  description: "IMPULSE diagnostics and transformation portal",
+  title: "Pulsar",
+  description: "Pulsar diagnostics portal",
 };
 
 import { UiModeProvider } from "@/presentation/components/UiModeProvider";
@@ -18,12 +18,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             __html: `
               (() => {
                 try {
-                  const storedTheme = localStorage.getItem('impulse-theme');
+                  const storedTheme = localStorage.getItem('pulsar-theme');
                   const systemDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
                   const theme = storedTheme === 'light' || storedTheme === 'dark' ? storedTheme : (systemDark ? 'dark' : 'light');
                   document.documentElement.setAttribute('data-theme', theme);
 
-                  const storedMode = localStorage.getItem('impulse-ui-mode');
+                  const storedMode = localStorage.getItem('pulsar-ui-mode');
                   if (storedMode === 'bento') {
                     document.documentElement.setAttribute('data-ui-mode', 'bento');
                   }

@@ -7,13 +7,15 @@ export const UiModeToggle = () => {
 
     return (
         <button
-            className="theme-toggle"
-            onClick={toggleMode}
+            className="theme-toggle ui-mode-label"
+            onClick={(event) => {
+                toggleMode();
+                event.currentTarget.blur();
+            }}
             aria-label="Toggle UI Mode"
-            title={mode === "bento" ? "Switch to Standard Mode (Ctrl+,)" : "Switch to Bento Mode (Ctrl+,)"}
-            style={{ fontSize: "0.7rem", fontWeight: 700 }}
+            title={mode === "bento" ? "Switch to Standard Mode" : "Switch to Bento Mode"}
         >
-            {mode === "bento" ? "BENTO" : "STD"}
+            {mode === "bento" ? "BNT" : "STD"}
         </button>
     );
 };

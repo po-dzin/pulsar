@@ -39,13 +39,12 @@ export const SecondTestTeaser = ({ locale, title, body, cta }: Props) => {
       <p className="muted">{body}</p>
       <form onSubmit={submit} className="inline-row">
         <input
-          className="input"
+          className="input waitlist-input"
           type="email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           required
           placeholder="you@example.com"
-          style={{ maxWidth: 280 }}
         />
         <button className="button button-muted" type="submit" disabled={status === "loading"}>
           {cta}

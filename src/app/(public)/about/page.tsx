@@ -22,14 +22,14 @@ export default async function AboutPage({
       <div className="grid">
         <section className="card">
           <h2>{context.dictionary.about.methodTitle}</h2>
-          <p className="muted" style={{ marginTop: "1rem", lineHeight: 1.6 }}>
+          <p className="muted prose-paragraph">
             {context.dictionary.about.methodBody}
           </p>
         </section>
 
         <section className="card">
           <h2>{context.dictionary.about.roleTitle}</h2>
-          <ul style={{ marginTop: "1rem", display: "flex", flexDirection: "column", gap: "0.75rem", paddingLeft: "1.25rem" }} className="muted">
+          <ul className="muted prose-list">
             <li>{context.dictionary.about.roleBody1}</li>
             <li>{context.dictionary.about.roleBody2}</li>
             <li>{context.dictionary.about.roleBody3}</li>

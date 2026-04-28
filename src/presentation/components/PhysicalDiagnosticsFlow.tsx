@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import type { Locale } from "@/domain/psychosomatic/model";
-import { getSupabaseBrowserClient } from "@/infrastructure/supabase/client";
+import { signInWithGoogle } from "@/infrastructure/supabase/client";
 import { physicalCategoryTitles, physicalTestByKey, physicalTests } from "@/domain/physical/catalog";
 import type {
   PhysicalAnswers,
@@ -107,11 +107,13 @@ export const PhysicalDiagnosticsFlow = ({
 
   const signIn = async () => {
     setBusy(true);
-    const supabase = getSupabaseBrowserClient();
-    const nextPath = `${window.location.pathname}${window.location.search}`;
-    const redirectTo = `${window.location.origin}/auth/callback?next=${encodeURIComponent(nextPath)}`;
-    await supabase.auth.signInWithOAuth({ provider: "google", options: { redirectTo } });
-    setBusy(false);
+    try {
+      const nextPath = `${window.location.pathname}${window.location.search}`;
+      const redirectTo = `${window.location.origin}/auth/callback?next=${encodeURIComponent(nextPath)}`;
+      await signInWithGoogle(redirectTo);
+    } finally {
+      setBusy(false);
+    }
   };
 
   const saveDraftIfNeeded = async (questionKey: string, answerValue: string) => {
@@ -229,34 +231,34 @@ export const PhysicalDiagnosticsFlow = ({
         ? Number(result.perInput.breathing_balance_pct)
         : Number.NaN;
     return (
-      <div key={category.category} className="card" style={{ padding: 14 }}>
-        <h3 style={{ marginBottom: 8 }}>
-          <span style={{ marginRight: 8 }}>{visual.icon}</span>
+      <div key={category.category} className="card physical-result-card">
+        <h3 className="physical-result-heading">
+          <span className="physical-result-icon">{visual.icon}</span>
           {categoryLabel}
         </h3>
-        <p style={{ marginTop: 0, marginBottom: 8 }}>
+        <p className="metric-line">
           {locale === "ru" ? "Оценка" : "Score"}: <strong>{category.overallPct}%</strong>
         </p>
-        <p style={{ marginTop: 0, marginBottom: 8 }}>
+        <p className="metric-line">
           {locale === "ru" ? "Уровень" : "Level"}:{" "}
           <span className="level-pill" data-tone={levelMeta.tone}>
             {levelMeta.emoji} {levelMeta.label[locale]}
           </span>
         </p>
-        <ul style={{ margin: 0, paddingLeft: 18 }}>
+        <ul className="metric-list">
           {category.tests.map((item) => (
-            <li key={`${category.category}-${item.testKey}`} style={{ marginBottom: 4 }}>
+            <li key={`${category.category}-${item.testKey}`} className="metric-list-item">
               {physicalTestByKey[item.testKey].title[locale]}:{" "}
-              <strong style={{ color: visual.accent }}>{item.overallPct}%</strong>{" "}
+              <strong className="metric-accent" style={{ ["--metric-accent" as string]: visual.accent }}>{item.overallPct}%</strong>{" "}
               <span className="muted">
                 {physicalLevelMeta[derivePhysicalLevel(item.overallPct)].emoji}
               </span>
             </li>
           ))}
           {Number.isFinite(breathingRatio) && Number.isFinite(breathingScore) ? (
-            <li style={{ marginBottom: 4 }}>
+            <li className="metric-list-item">
               {locale === "ru" ? "Коэффициент баланса" : "Balance coefficient"}:{" "}
-              <strong style={{ color: visual.accent }}>{breathingScore}%</strong>{" "}
+              <strong className="metric-accent" style={{ ["--metric-accent" as string]: visual.accent }}>{breathingScore}%</strong>{" "}
               <span className="muted">
                 ({locale === "ru" ? "соотношение" : "ratio"} {breathingRatio.toFixed(2)}){" "}
                 {physicalLevelMeta[derivePhysicalLevel(breathingScore)].emoji}
@@ -282,14 +284,14 @@ export const PhysicalDiagnosticsFlow = ({
           </span>
         </p>
 
-        <div className="grid cols-2" style={{ gap: 12, marginTop: 16 }}>
+        <div className="grid cols-2 detail-grid">
           {result.categories.map(renderCategoryCard)}
         </div>
 
         {result.riskFlags.length > 0 ? (
-          <div className="card" style={{ marginTop: 14 }}>
+          <div className="card detail-block-spaced">
             <h3>{locale === "ru" ? "Диагностические флаги" : "Diagnostic flags"}</h3>
-            <ul style={{ marginTop: 6 }}>
+            <ul className="detail-list-tight">
               {result.riskFlags.map((flag) => (
                 <li key={flag}>{riskFlagLabels[flag][locale]}</li>
               ))}
@@ -297,12 +299,12 @@ export const PhysicalDiagnosticsFlow = ({
           </div>
         ) : null}
 
-        <div className="card" style={{ marginTop: 14 }}>
+        <div className="card detail-block-spaced">
           <h3>{locale === "ru" ? "Рекомендации" : "Recommendations"}</h3>
           {result.recommendations.map((block, idx) => (
-            <div key={`${block.title[locale]}-${idx}`} style={{ marginBottom: 12 }}>
+            <div key={`${block.title[locale]}-${idx}`} className="profile-history-rec-block">
               <strong>{block.title[locale]}</strong>
-              <ul style={{ marginTop: 6 }}>
+              <ul className="detail-list-tight">
                 {block.items.map((item, itemIdx) => (
                   <li key={itemIdx}>{item[locale]}</li>
                 ))}
@@ -311,18 +313,18 @@ export const PhysicalDiagnosticsFlow = ({
           ))}
         </div>
 
-        <div className="inline-row" style={{ marginTop: 12 }}>
-          <a href={productsHref} className="button button-primary" data-testid="physical-cta-products">
+        <div className="inline-row stack-top-md">
+          <a href={productsHref} className="button button-primary button-page-cta" data-testid="physical-cta-products">
             {consultationLabel}
           </a>
-          <button type="button" className="button button-muted" onClick={restart} data-testid="physical-retry">
+          <button type="button" className="button button-muted button-page-cta" onClick={restart} data-testid="physical-retry">
             {locale === "ru" ? "Пройти заново" : "Retry full test"}
           </button>
           <PrintPdfButton
             label={saveResultLabel}
             loadingLabel={saveResultLoadingLabel}
             targetId="physical-result-export"
-            filename={locale === "ru" ? "Impulse_Physical_Result.pdf" : "Impulse_Physical_Result_EN.pdf"}
+            filename={locale === "ru" ? "Pulsar_Physical_Result.pdf" : "Pulsar_Physical_Result_EN.pdf"}
             testId="physical-save-result-button"
           />
         </div>
@@ -340,7 +342,7 @@ export const PhysicalDiagnosticsFlow = ({
             : "Single full test with 10 protocols across 5 categories. Output includes category scores, overall score, and recommendations."}
         </p>
 
-        <ul style={{ marginTop: 10, paddingLeft: 18 }}>
+        <ul className="category-list">
           <li>{categoryVisual.breathing.icon} {physicalCategoryTitles.breathing[locale]}</li>
           <li>{categoryVisual.cardio_strength.icon} {physicalCategoryTitles.cardio_strength[locale]}</li>
           <li>{categoryVisual.strength_endurance.icon} {physicalCategoryTitles.strength_endurance[locale]}</li>
@@ -349,11 +351,11 @@ export const PhysicalDiagnosticsFlow = ({
         </ul>
 
         {!isAuthenticated ? (
-          <div className="inline-row" style={{ marginTop: 12 }}>
-            <p className="muted" style={{ width: "100%", marginBottom: 8 }}>{authRequiredToStartLabel}</p>
+          <div className="inline-row stack-top-md">
+            <p className="muted inline-row-top">{authRequiredToStartLabel}</p>
             <button
               type="button"
-              className="button button-primary"
+              className="button button-primary button-page-cta"
               onClick={() => void signIn()}
               disabled={busy}
               data-testid="physical-signin-button"
@@ -377,10 +379,10 @@ export const PhysicalDiagnosticsFlow = ({
               </span>
             </label>
 
-            <div className="inline-row" style={{ marginTop: 12 }}>
+            <div className="inline-row stack-top-md">
               <button
                 type="button"
-                className="button button-primary"
+                className="button button-primary button-page-cta"
                 onClick={() => {
                   setStarted(true);
                   setCurrentIndex(0);
@@ -410,7 +412,7 @@ export const PhysicalDiagnosticsFlow = ({
       </div>
 
       <section className="card physical-test-card">
-        <p className="muted" style={{ marginBottom: 8 }}>
+        <p className="muted card-intro">
           {locale === "ru" ? "Категория" : "Category"}:{" "}
           <strong>
             {categoryVisual[currentTest.category].icon} {physicalCategoryTitles[currentTest.category][locale]}
@@ -424,9 +426,9 @@ export const PhysicalDiagnosticsFlow = ({
         </p>
         <p className="muted">{currentTest.description[locale]}</p>
 
-        <ol style={{ marginTop: 10, paddingLeft: 18 }}>
+        <ol className="protocol-list">
           {currentTest.protocol[locale].map((step, idx) => (
-            <li key={idx} style={{ marginBottom: 6 }}>{step}</li>
+            <li key={idx} className="protocol-list-item">{step}</li>
           ))}
         </ol>
       </section>
@@ -445,7 +447,7 @@ export const PhysicalDiagnosticsFlow = ({
               </div>
 
               {input.type === "number" ? (
-                <div style={{ marginTop: 10 }}>
+                <div className="number-input-wrap">
                   <input
                     type="number"
                     min={input.min}
@@ -454,21 +456,13 @@ export const PhysicalDiagnosticsFlow = ({
                     value={selected}
                     onChange={(e) => setNumberAnswer(input.key, e.target.value)}
                     onBlur={(e) => void saveDraftIfNeeded(input.key, e.target.value)}
-                    style={{
-                      width: "100%",
-                      border: "1px solid var(--color-border)",
-                      background: "var(--color-surface)",
-                      borderRadius: 10,
-                      padding: "12px 14px",
-                      color: "var(--color-text)",
-                      fontSize: "0.95rem",
-                    }}
+                    className="number-input"
                     placeholder={locale === "ru" ? "Введите значение" : "Enter value"}
                     data-testid={`physical-input-${input.key}`}
                   />
                 </div>
               ) : (
-                <div className="answer-grid" style={{ marginTop: 10 }}>
+                <div className="answer-grid answer-grid-offset">
                   {Object.entries(input.scaleLabels ?? {}).map(([value, label]) => (
                     <button
                       key={value}
@@ -488,10 +482,10 @@ export const PhysicalDiagnosticsFlow = ({
         })}
       </div>
 
-      <div className="diagnostics-nav" style={{ marginTop: 14 }}>
+      <div className="diagnostics-nav stack-top-lg">
         <button
           type="button"
-          className="button button-muted"
+          className="button button-muted button-page-cta"
           onClick={goBack}
           data-testid="physical-prev-test-button"
         >
@@ -499,7 +493,7 @@ export const PhysicalDiagnosticsFlow = ({
         </button>
         <button
           type="button"
-          className="button button-primary"
+          className="button button-primary button-page-cta"
           onClick={() => void goNext()}
           disabled={!currentIsCompleted || busy}
           data-testid={currentIndex >= physicalTests.length - 1 ? "physical-complete-button" : "physical-next-test-button"}

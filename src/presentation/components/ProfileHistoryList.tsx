@@ -91,7 +91,7 @@ export const ProfileHistoryList = ({ items, locale, dictionary }: Props) => {
     const [filter, setFilter] = useState<"all" | "psychosomatic" | "physical">("all");
 
     if (items.length === 0) {
-        return <p className="muted" style={{ marginTop: "var(--space-2)" }}>{dictionary.profile.noHistory}</p>;
+        return <p className="muted profile-history-empty">{dictionary.profile.noHistory}</p>;
     }
 
     const filteredItems = items.filter((item) => {
@@ -106,8 +106,8 @@ export const ProfileHistoryList = ({ items, locale, dictionary }: Props) => {
     };
 
     return (
-        <div className="grid" style={{ marginTop: "var(--space-3)", gap: "12px" }}>
-            <div className="test-selector" style={{ marginTop: 0 }}>
+        <div className="grid profile-history-list">
+            <div className="test-selector profile-history-filters">
                 <button
                     type="button"
                     className="test-selector-tab"
@@ -158,9 +158,8 @@ export const ProfileHistoryList = ({ items, locale, dictionary }: Props) => {
                 return (
                     <div
                         key={item.id}
-                        className="card"
+                        className="card profile-history-card"
                         data-testid={`profile-history-card-${index}`}
-                        style={{ overflow: "hidden", padding: 0, transition: "all 0.25s ease" }}
                     >
                         {/* ── Header row — always visible, click to toggle ── */}
                         <div
@@ -197,18 +196,18 @@ export const ProfileHistoryList = ({ items, locale, dictionary }: Props) => {
 
                         {/* ── Expanded detail panel ── */}
                         {isExpanded && (
-                            <div id={`pdf-content-${item.id}`} style={{ borderTop: "1px solid var(--color-border)", padding: "20px" }}>
-                                <div className="grid cols-2" style={{ marginBottom: "20px", gap: "10px" }}>
-                                    <div style={{ background: "rgba(128,128,128,0.06)", padding: "14px", borderRadius: "8px" }}>
-                                        <h4 style={{ margin: "0 0 10px", fontSize: "0.75rem", textTransform: "uppercase", letterSpacing: "0.08em", color: "var(--color-text-muted)" }}>
+                            <div id={`pdf-content-${item.id}`} className="profile-history-detail">
+                                <div className="grid cols-2 profile-history-summary-grid">
+                                    <div className="profile-history-summary-block">
+                                        <h4 className="profile-history-section-title">
                                             {dictionary.result.strong}
                                         </h4>
                                         {zonesStrong.length === 0 ? (
-                                            <p className="muted" style={{ fontSize: "0.85rem", margin: 0 }}>—</p>
+                                            <p className="muted profile-history-empty-state">—</p>
                                         ) : (
-                                            <ul style={{ margin: 0, paddingLeft: "18px", fontSize: "0.88rem" }}>
+                                            <ul className="profile-history-zone-list">
                                                 {zonesStrong.map((z) => (
-                                                    <li key={z.zone} style={{ marginBottom: "4px" }}>
+                                                    <li key={z.zone} className="profile-history-zone-item">
                                                         {resolveZoneLabel(z.zone, locale, item.testType)}: <strong>{z.score}%</strong>
                                                     </li>
                                                 ))}
@@ -216,16 +215,16 @@ export const ProfileHistoryList = ({ items, locale, dictionary }: Props) => {
                                         )}
                                     </div>
 
-                                    <div style={{ background: "rgba(128,128,128,0.06)", padding: "14px", borderRadius: "8px" }}>
-                                        <h4 style={{ margin: "0 0 10px", fontSize: "0.75rem", textTransform: "uppercase", letterSpacing: "0.08em", color: "var(--color-text-muted)" }}>
+                                    <div className="profile-history-summary-block">
+                                        <h4 className="profile-history-section-title">
                                             {dictionary.result.growth}
                                         </h4>
                                         {zonesGrowth.length === 0 ? (
-                                            <p className="muted" style={{ fontSize: "0.85rem", margin: 0 }}>—</p>
+                                            <p className="muted profile-history-empty-state">—</p>
                                         ) : (
-                                            <ul style={{ margin: 0, paddingLeft: "18px", fontSize: "0.88rem" }}>
+                                            <ul className="profile-history-zone-list">
                                                 {zonesGrowth.map((z) => (
-                                                    <li key={z.zone} style={{ marginBottom: "4px" }}>
+                                                    <li key={z.zone} className="profile-history-zone-item">
                                                         {resolveZoneLabel(z.zone, locale, item.testType)}: <strong>{z.score}%</strong>
                                                     </li>
                                                 ))}
@@ -236,21 +235,21 @@ export const ProfileHistoryList = ({ items, locale, dictionary }: Props) => {
 
                                 {/* Recommendations */}
                                 {recommendations.length > 0 && (
-                                    <div style={{ marginBottom: "20px" }}>
-                                        <h4 style={{ margin: "0 0 14px", fontSize: "0.75rem", textTransform: "uppercase", letterSpacing: "0.08em", color: "var(--color-text-muted)" }}>
+                                    <div className="profile-history-recommendations">
+                                        <h4 className="profile-history-section-title">
                                             {dictionary.result.recommendations}
                                         </h4>
                                         {recommendations.map((block, idx) => (
-                                            <div key={idx} style={{ marginBottom: "14px" }}>
-                                                <strong style={{ display: "block", marginBottom: "8px", fontSize: "0.92rem" }}>
+                                            <div key={idx} className="profile-history-rec-block">
+                                                <strong className="profile-history-rec-heading">
                                                     {t(block.title, locale)}
                                                 </strong>
                                                 {Array.isArray(block.items) && block.items.length > 0 && (
-                                                    <ul style={{ margin: 0, paddingLeft: "18px", fontSize: "0.88rem", color: "var(--color-text-muted)" }}>
+                                                    <ul className="profile-history-rec-list muted">
                                                         {block.items.map((recItem, recIdx) => {
                                                             const text = t(recItem, locale);
                                                             return text ? (
-                                                                <li key={recIdx} style={{ marginBottom: "5px" }}>{text}</li>
+                                                                <li key={recIdx} className="profile-history-rec-item">{text}</li>
                                                             ) : null;
                                                         })}
                                                     </ul>
@@ -266,7 +265,7 @@ export const ProfileHistoryList = ({ items, locale, dictionary }: Props) => {
                                         targetId={`pdf-content-${item.id}`}
                                         label={dictionary.profile.download}
                                         loadingLabel={dictionary.profile.downloadLoading}
-                                        filename={`Impulse_${item.testType}_${item.createdAt.slice(0, 10)}.pdf`}
+                                        filename={`Pulsar_${item.testType}_${item.createdAt.slice(0, 10)}.pdf`}
                                         testId={`profile-download-${index}`}
                                     />
                                 </div>

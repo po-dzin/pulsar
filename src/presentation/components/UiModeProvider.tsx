@@ -23,7 +23,7 @@ export const UiModeProvider = ({ children }: { children: React.ReactNode }) => {
     useEffect(() => {
         // Attempt to read from localStorage on mount (client-side only)
         try {
-            const stored = localStorage.getItem("impulse-ui-mode") as UiMode;
+            const stored = localStorage.getItem("pulsar-ui-mode") as UiMode;
             if (stored === "bento") {
                 setMode("bento");
                 document.documentElement.setAttribute("data-ui-mode", "bento");
@@ -40,7 +40,7 @@ export const UiModeProvider = ({ children }: { children: React.ReactNode }) => {
                 document.documentElement.removeAttribute("data-ui-mode");
             }
             try {
-                localStorage.setItem("impulse-ui-mode", next);
+                localStorage.setItem("pulsar-ui-mode", next);
             } catch { }
             return next;
         });

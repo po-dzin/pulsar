@@ -9,7 +9,7 @@ const getInitialTheme = (): Theme => {
     return "light";
   }
 
-  const stored = window.localStorage.getItem("impulse-theme");
+  const stored = window.localStorage.getItem("pulsar-theme");
   if (stored === "light" || stored === "dark") {
     return stored;
   }
@@ -31,7 +31,7 @@ export const ThemeToggle = () => {
   const toggle = () => {
     const nextTheme: Theme = theme === "light" ? "dark" : "light";
     document.documentElement.setAttribute("data-theme", nextTheme);
-    window.localStorage.setItem("impulse-theme", nextTheme);
+    window.localStorage.setItem("pulsar-theme", nextTheme);
     setTheme(nextTheme);
   };
 
@@ -40,7 +40,10 @@ export const ThemeToggle = () => {
       type="button"
       className="theme-toggle"
       data-theme-mode={theme}
-      onClick={toggle}
+      onClick={(event) => {
+        toggle();
+        event.currentTarget.blur();
+      }}
       disabled={!mounted}
       data-testid="theme-toggle"
       aria-label={theme === "light" ? "Switch to dark theme" : "Switch to light theme"}

@@ -76,6 +76,7 @@ textarea {
 
 .topbar {
   --control-height: 38px;
+  --topbar-height: 73px;
   position: sticky;
   top: 0;
   z-index: 30;
@@ -83,6 +84,12 @@ textarea {
   overflow: visible;
   background: color-mix(in srgb, var(--color-surface) 96%, transparent);
   border-bottom: 1px solid var(--color-divider);
+}
+
+.topbar[data-menu-open] {
+  background: color-mix(in srgb, var(--color-surface-strong) 98%, black 18%);
+  border-bottom-color: transparent;
+  box-shadow: none;
 }
 
 .topbar::before {
@@ -97,6 +104,20 @@ textarea {
     color-mix(in srgb, var(--color-surface-strong) 16%, transparent) 100%
   );
   z-index: -2;
+}
+
+.topbar[data-menu-open]::before {
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--color-surface-strong) 92%, black 12%) 0%,
+    color-mix(in srgb, var(--color-surface) 96%, black 18%) 100%
+  );
+  backdrop-filter: blur(calc(var(--glass-blur-strong) + 4px)) saturate(112%) brightness(0.84);
+  -webkit-backdrop-filter: blur(calc(var(--glass-blur-strong) + 4px)) saturate(112%) brightness(0.84);
+}
+
+.topbar[data-menu-open]::after {
+  opacity: calc(var(--grain-opacity) * 0.9);
 }
 
 .topbar::after {
@@ -205,19 +226,26 @@ textarea {
   text-transform: uppercase;
   white-space: nowrap;
   color: color-mix(in srgb, var(--color-text) 80%, transparent);
-  transition: var(--transition-base);
+  background: transparent;
+  text-shadow: none;
+  box-shadow: none;
+  transition: color 180ms ease, text-shadow 180ms ease;
 }
 
-.nav-link:hover {
-  border-color: var(--color-accent-dim);
-  background: color-mix(in srgb, var(--color-surface-strong) 84%, transparent);
-  color: var(--color-accent);
+@media (hover: hover) and (pointer: fine) {
+  .nav-link:hover {
+    border-color: transparent;
+    background: transparent;
+    color: var(--interactive-accent-text);
+  }
 }
 
 .nav-link[data-active] {
-  border-color: var(--color-accent);
-  background: color-mix(in srgb, var(--color-accent) 10%, var(--color-surface-strong));
-  color: var(--color-accent);
+  border-color: transparent;
+  background: transparent;
+  color: var(--interactive-accent-text);
+  box-shadow: none;
+  text-shadow: var(--interactive-accent-text-glow);
 }
 
 .theme-toggle,
@@ -228,31 +256,35 @@ textarea {
   width: var(--control-height);
   height: var(--control-height);
   padding: 0;
-  border: 1px solid var(--color-border-strong);
+  border: 1px solid transparent;
   border-radius: 999px;
   background: transparent;
   color: var(--color-text);
   cursor: pointer;
-  transition: var(--transition-base);
+  box-shadow: none;
+  text-shadow: none;
+  transition: color 180ms ease, text-shadow 180ms ease;
   flex-shrink: 0;
 }
 
-.theme-toggle:hover,
-.locale-btn:hover {
-  border-color: var(--color-accent-dim);
-  background: color-mix(in srgb, var(--color-surface-strong) 95%, transparent);
-  color: var(--color-accent);
-}
+@media (hover: hover) and (pointer: fine) {
+  .theme-toggle:hover,
+  .locale-btn:hover {
+    border-color: transparent;
+    background: transparent;
+    color: var(--interactive-accent-text);
+  }
 
-:root[data-theme="dark"] .theme-toggle:hover,
-:root[data-theme="dark"] .locale-btn:hover {
-  border-color: color-mix(in srgb, var(--color-accent) 65%, var(--color-border-strong));
-  background: color-mix(in srgb, var(--color-surface-strong) 90%, transparent);
-  color: var(--color-accent);
+  :root[data-theme="dark"] .theme-toggle:hover,
+  :root[data-theme="dark"] .locale-btn:hover {
+    border-color: transparent;
+    background: transparent;
+    color: var(--interactive-accent-text);
+  }
 }
 
 .theme-toggle[data-theme-mode="dark"] {
-  border-color: var(--color-border-strong);
+  border-color: transparent;
 }
 
 /* Locale button — circle identical to theme toggle */
@@ -373,6 +405,19 @@ textarea {
   gap: 12px;
   align-items: center;
   flex-wrap: wrap;
+}
+
+.landing-cta-row > .button {
+  min-width: 280px;
+  justify-content: center;
+}
+
+@media (min-width: 641px) {
+  .landing-cta-row > .button {
+    min-height: 56px;
+    padding: 14px 32px;
+    font-size: 1rem;
+  }
 }
 
 /* ── Bento Mode UI (Klipsan Glassmorphism) ──────── */
@@ -556,8 +601,9 @@ textarea {
 }
 
 .card-interactive:hover {
-  border-color: var(--color-accent-dim);
+  border-color: var(--color-border);
   background: color-mix(in srgb, var(--color-surface-strong) 70%, transparent);
+  transform: translateY(-2px);
 }
 
 .card h2,
@@ -653,6 +699,21 @@ textarea {
   font-size: 1rem;
   font-weight: 700;
   letter-spacing: 0.01em;
+}
+
+.button-page-cta {
+  min-width: 280px;
+  min-height: 56px;
+  padding: 14px 32px;
+  font-size: 1rem;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .button-page-cta:hover:not(:disabled) {
+    transform: translateY(-2px);
+  }
 }
 
 :root[data-theme="dark"] .button-primary {
@@ -786,13 +847,25 @@ textarea {
   cursor: pointer;
   background: transparent;
   color: var(--color-text-muted);
-  transition: all 160ms ease;
+  text-shadow: none;
+  box-shadow: none;
+  transition: color 160ms ease, text-shadow 160ms ease;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .test-selector-tab:hover:not(:disabled) {
+    border-color: var(--color-accent-dim);
+    background: transparent;
+    color: var(--interactive-accent-text);
+  }
 }
 
 .test-selector-tab[data-active] {
   border-color: var(--color-accent);
-  background: color-mix(in srgb, var(--color-accent) 10%, var(--color-surface-strong));
-  color: var(--color-accent);
+  background: transparent;
+  color: var(--interactive-accent-text);
+  box-shadow: none;
+  text-shadow: var(--interactive-accent-text-glow);
 }
 
 .test-selector-tab:disabled:not([data-active]) {
@@ -919,26 +992,31 @@ textarea {
 }
 
 .answer-pill {
-  border: 1px solid var(--color-border);
+  border: 1px solid transparent;
   border-radius: 999px;
   padding: 7px 14px;
   font-size: 0.82rem;
   font-weight: 600;
   cursor: pointer;
-  background: color-mix(in srgb, var(--color-surface-strong) 94%, transparent);
-  color: var(--color-text);
-  transition: border-color 140ms ease, background 140ms ease, transform 140ms ease;
+  background: transparent;
+  color: color-mix(in srgb, var(--color-text) 88%, transparent);
+  text-shadow: none;
+  box-shadow: none;
+  transition: color 140ms ease, text-shadow 140ms ease;
 }
 
-.answer-pill:hover {
-  border-color: var(--color-border-strong);
-  transform: translateY(-1px);
+@media (hover: hover) and (pointer: fine) {
+  .answer-pill:hover {
+    border-color: transparent;
+    color: var(--interactive-accent-text);
+  }
 }
 
 .answer-pill[data-selected] {
-  border-color: color-mix(in srgb, var(--color-accent) 78%, var(--color-border-strong));
-  background: color-mix(in srgb, var(--color-accent) 14%, var(--color-surface-strong));
-  color: var(--color-text);
+  border-color: transparent;
+  background: transparent;
+  color: var(--interactive-accent-text);
+  text-shadow: var(--interactive-accent-text-glow);
 }
 
 /* ── Consent row ─────────────────────────── */
@@ -1033,25 +1111,314 @@ textarea {
 }
 
 .answer-chip {
-  border: 1px solid var(--color-border);
+  border: 1px solid transparent;
   border-radius: 999px;
   padding: 10px 16px;
   font-size: 0.85rem;
   font-weight: 600;
   cursor: pointer;
-  background: color-mix(in srgb, var(--color-surface-strong) 94%, transparent);
-  color: var(--color-text);
-  transition: border-color 140ms ease, background 140ms ease, transform 140ms ease;
+  background: transparent;
+  color: color-mix(in srgb, var(--color-text) 88%, transparent);
+  text-shadow: none;
+  box-shadow: none;
+  transition: color 140ms ease, text-shadow 140ms ease;
 }
 
-.answer-chip:hover {
-  border-color: var(--color-border-strong);
-  transform: translateY(-1px);
+@media (hover: hover) and (pointer: fine) {
+  .answer-chip:hover {
+    border-color: transparent;
+    color: var(--interactive-accent-text);
+  }
 }
 
 .answer-chip[data-selected] {
-  border-color: color-mix(in srgb, var(--color-accent) 78%, var(--color-border-strong));
-  background: color-mix(in srgb, var(--color-accent) 14%, var(--color-surface-strong));
+  border-color: transparent;
+  background: transparent;
+  color: var(--interactive-accent-text);
+  text-shadow: var(--interactive-accent-text-glow);
+}
+
+.profile-history-list {
+  margin-top: var(--space-3);
+  gap: 12px;
+}
+
+.profile-history-filters {
+  margin-top: 0;
+}
+
+.profile-history-empty {
+  margin-top: var(--space-2);
+}
+
+.profile-history-card {
+  overflow: hidden;
+  padding: 0;
+  transition: all 0.25s ease;
+}
+
+.profile-history-detail {
+  border-top: 1px solid var(--color-border);
+  padding: 20px;
+}
+
+.profile-history-summary-grid {
+  margin-bottom: 20px;
+  gap: 10px;
+}
+
+.profile-history-summary-block {
+  background: rgba(128, 128, 128, 0.06);
+  padding: 14px;
+  border-radius: var(--radius-sm);
+}
+
+.profile-history-section-title {
+  margin: 0 0 10px;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--color-text-muted);
+}
+
+.profile-history-empty-state {
+  font-size: 0.85rem;
+  margin: 0;
+}
+
+.profile-history-zone-list,
+.profile-history-rec-list {
+  margin: 0;
+  padding-left: 18px;
+  font-size: 0.88rem;
+}
+
+.profile-history-zone-item {
+  margin-bottom: 4px;
+}
+
+.profile-history-recommendations {
+  margin-bottom: 20px;
+}
+
+.profile-history-rec-block {
+  margin-bottom: 14px;
+}
+
+.profile-history-rec-heading {
+  display: block;
+  margin-bottom: 8px;
+  font-size: 0.92rem;
+}
+
+.profile-history-rec-item {
+  margin-bottom: 5px;
+}
+
+.content-stack-md {
+  margin-top: var(--space-4);
+}
+
+.stack-top-sm {
+  margin-top: 10px;
+}
+
+.stack-top-md {
+  margin-top: 12px;
+}
+
+.stack-top-lg {
+  margin-top: 14px;
+}
+
+.stack-top-xl {
+  margin-top: 16px;
+}
+
+.stack-top-2xl {
+  margin-top: 24px;
+}
+
+.inline-row-start {
+  justify-content: flex-start;
+  gap: 16px;
+  align-items: center;
+}
+
+.inline-row-top {
+  width: 100%;
+  margin-bottom: 8px;
+}
+
+.text-pre-line {
+  white-space: pre-line;
+}
+
+.prose-list {
+  margin-top: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding-left: 1.25rem;
+}
+
+.prose-paragraph {
+  margin-top: 1rem;
+  line-height: 1.6;
+}
+
+.knowledge-category-tabs-offset {
+  margin-top: var(--space-4);
+}
+
+.knowledge-card-cta {
+  display: inline-flex;
+  margin-top: 16px;
+}
+
+.dialog-wide {
+  max-width: 720px;
+}
+
+.dialog-actions-tight {
+  margin-top: 6px;
+}
+
+.detail-grid {
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.detail-card-compact {
+  padding: 14px;
+}
+
+.detail-card-spaced {
+  padding: 16px;
+  margin-top: 12px;
+}
+
+.detail-block-spaced {
+  margin-top: 14px;
+}
+
+.detail-list-tight {
+  margin-top: 6px;
+  margin-bottom: 0;
+}
+
+.detail-block-offset-sm {
+  margin-top: 10px;
+}
+
+.detail-block-offset-md {
+  margin-top: 14px;
+}
+
+.result-actions {
+  margin-top: 16px;
+}
+
+.card-intro {
+  margin-bottom: 8px;
+}
+
+.category-list,
+.protocol-list {
+  margin-top: 10px;
+  padding-left: 18px;
+}
+
+.protocol-list-item {
+  margin-bottom: 6px;
+}
+
+.answer-grid-offset {
+  margin-top: 10px;
+}
+
+.number-input-wrap {
+  margin-top: 10px;
+}
+
+.number-input {
+  width: 100%;
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  border-radius: 10px;
+  padding: 12px 14px;
+  color: var(--color-text);
+  font-size: 0.95rem;
+}
+
+.physical-result-card {
+  padding: 14px;
+}
+
+.physical-result-heading {
+  margin-bottom: 8px;
+}
+
+.physical-result-icon {
+  margin-right: 8px;
+}
+
+.metric-line {
+  margin-top: 0;
+  margin-bottom: 8px;
+}
+
+.metric-list {
+  margin: 0;
+  padding-left: 18px;
+}
+
+.metric-list-item {
+  margin-bottom: 4px;
+}
+
+.metric-accent {
+  color: var(--metric-accent, var(--color-text));
+}
+
+.print-pdf-button {
+  font-size: 0.85rem;
+}
+
+.print-pdf-icon {
+  margin-right: 6px;
+}
+
+.waitlist-input {
+  max-width: 280px;
+}
+
+.mobile-avatar-static {
+  width: 34px;
+  height: 34px;
+  pointer-events: none;
+}
+
+.mobile-action-link {
+  flex: 1;
+  text-align: center;
+}
+
+.mobile-action-button {
+  flex: 1;
+}
+
+.mobile-auth-button {
+  width: 100%;
+}
+
+.ui-mode-label {
+  font-size: 0.7rem;
+  font-weight: 700;
+}
+
+.profile-history-section {
+  margin-top: var(--space-4);
 }
 
 .muted {
@@ -1109,12 +1476,15 @@ footer {
   width: 44px;
   height: 44px;
   border-radius: 50%;
-  border: 1px solid var(--color-border);
-  background: color-mix(in srgb, var(--color-surface) 90%, transparent);
+  border: 1px solid transparent;
+  background: transparent;
   color: var(--color-text);
   cursor: pointer;
   z-index: 50;
   flex-shrink: 0;
+  box-shadow: none;
+  text-shadow: none;
+  transition: color 180ms ease, text-shadow 180ms ease;
 }
 
 .burger-btn svg {
@@ -1122,19 +1492,32 @@ footer {
   height: 20px;
 }
 
+@media (hover: hover) and (pointer: fine) {
+  .burger-btn:hover {
+    border-color: transparent;
+    color: var(--interactive-accent-text);
+  }
+}
+
+.topbar[data-menu-open] .burger-btn {
+  border-color: transparent;
+  color: var(--color-text);
+  text-shadow: none;
+}
+
 .mobile-menu-overlay {
   position: fixed;
-  top: 73px;
+  top: calc(var(--topbar-height) - 1px);
   left: 0;
   right: 0;
   bottom: 0;
-  background: color-mix(in srgb, var(--color-surface) 94%, transparent);
-  backdrop-filter: blur(var(--glass-blur-strong)) saturate(106%);
-  -webkit-backdrop-filter: blur(var(--glass-blur-strong)) saturate(106%);
+  background: color-mix(in srgb, var(--color-surface-strong) 98%, black 18%);
+  backdrop-filter: blur(calc(var(--glass-blur-strong) + 4px)) saturate(112%) brightness(0.84);
+  -webkit-backdrop-filter: blur(calc(var(--glass-blur-strong) + 4px)) saturate(112%) brightness(0.84);
   z-index: 40;
   display: flex;
   flex-direction: column;
-  padding: 12px 24px 24px;
+  padding: 13px 24px 24px;
   opacity: 0;
   pointer-events: none;
   transform: translateY(-10px);
@@ -1150,7 +1533,11 @@ footer {
   right: 0;
   bottom: 0;
   background:
-    var(--color-bg-gradient),
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--color-surface-strong) 92%, black 12%) 0%,
+      color-mix(in srgb, var(--color-surface) 96%, black 18%) 100%
+    ),
     radial-gradient(
       circle at 1px 1px,
       color-mix(in srgb, var(--color-text) 8%, transparent) 0.7px,
@@ -1183,7 +1570,7 @@ footer {
 }
 
 .mobile-nav .nav-link[data-active] {
-  border-color: var(--color-accent);
+  border-color: transparent;
 }
 
 .mobile-controls {
@@ -1231,6 +1618,10 @@ footer {
 }
 
 @media (max-width: 920px) {
+  .topbar {
+    --topbar-height: 72px;
+  }
+
   .desktop-only {
     display: none !important;
   }
@@ -1247,6 +1638,10 @@ footer {
 }
 
 @media (max-width: 640px) {
+  .topbar {
+    --topbar-height: 68px;
+  }
+
   .topbar-inner {
     padding: 12px 14px;
   }

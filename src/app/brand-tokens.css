@@ -27,6 +27,8 @@
   --color-accent: #b99b5d;
   --color-accent-contrast: #14110a;
   --color-border-strong: rgba(16, 16, 16, 0.26);
+  --interactive-accent-text: var(--color-accent);
+  --interactive-accent-text-glow: 0 0 8px color-mix(in srgb, var(--color-accent) 28%, transparent);
   --glass-blur-soft: 16px;
   --glass-blur: 22px;
   --glass-blur-strong: 30px;
@@ -78,6 +80,8 @@
   --color-accent-contrast: #1a140a;
   --color-accent-dim: rgba(207, 178, 119, 0.3);
   --color-border-strong: rgba(242, 242, 239, 0.3);
+  --interactive-accent-text: var(--color-accent);
+  --interactive-accent-text-glow: 0 0 10px color-mix(in srgb, var(--color-accent) 34%, transparent);
   --color-success: #4bb778;
   --color-warning: #d19a41;
   --color-danger: #d96961;
