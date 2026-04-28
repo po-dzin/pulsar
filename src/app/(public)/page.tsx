@@ -31,7 +31,7 @@ export default async function MissionPage({
             <h1 className="landing-headline">{d.home.title}</h1>
             <p className="landing-sub landing-sub-hero">{d.home.subtitle}</p>
             <div className="landing-cta-row">
-              <Link href={withLang("/diagnostics", locale)} className="button button-primary button-lg">
+              <Link href={withLang("/diagnostics", locale)} className="button button-primary button-lg landing-hero-cta">
                 {d.home.heroCta}
               </Link>
             </div>

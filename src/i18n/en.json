@@ -1,5 +1,5 @@
 {
-  "brand": "IMPULSE",
+  "brand": "PULSAR",
   "nav": {
     "mission": "Mission",
     "diagnostics": "Diagnostics",
@@ -9,27 +9,27 @@
   },
   "common": {
     "primaryCta": "Start diagnostics",
-    "disclaimer": "IMPULSE diagnostics is a self-observation tool and not a medical diagnosis.",
+    "disclaimer": "PULSAR diagnostics is a self-observation tool and not a medical diagnosis.",
     "language": "Language",
     "loading": "Loading..."
   },
   "home": {
-    "eyebrow": "Algorithm of sustainable evolution",
-    "title": "Transformation without rollbacks",
-    "subtitle": "Body. Consciousness. Energy.\nUnderstand your current state and take the first precise step.",
-    "heroCta": "Take the first step",
+    "eyebrow": "Diagnostics and support",
+    "title": "State assessment platform",
+    "subtitle": "Assessment flows, results, knowledge base, and operational tools in a single interface.",
+    "heroCta": "Open diagnostics",
     "sections": {
-      "approachTitle": "System, not chaos",
-      "approachBody": "We focus on practical integration: awareness, regulation, and sustainable action.",
-      "diagnosticsBody": "A living psychosomatic assessment across seven key zones: sleep, energy, body, breath. Get your personalized profile and recovery roadmap.",
-      "loopTitle": "How it works",
-      "loopBody": "Google sign-in, psychosomatic diagnostics, inline result, recommendations, products and consultation."
+      "approachTitle": "Structured process",
+      "approachBody": "The platform combines assessment flows, result storage, and access to related materials.",
+      "diagnosticsBody": "The diagnostics module records the current state through a question flow and returns a structured result.",
+      "loopTitle": "Usage flow",
+      "loopBody": "Sign in, complete diagnostics, review the result, and continue to related materials and sections."
     }
   },
   "diagnostics": {
     "title": "Diagnostics",
-    "subtitle": "Understand your current state and get the next practical step.",
-    "description": "16 questions, 7-10 minutes. Progress saves automatically, results show inline.\n\nThe test covers key psychosomatic areas: sleep, energy, digestion, anxiety and more. Based on your answers you'll get a personalized profile and recommendations.",
+    "subtitle": "State assessment with saved results and history.",
+    "description": "16 questions, 7-10 minutes. Progress saves automatically, results show inline.\n\nThe assessment covers several state areas and produces a structured summary based on the selected answers.",
     "consent": "I agree to process my diagnostic data for result storage and progress tracking.",
     "start": "Start test",
     "next": "Next",
@@ -64,14 +64,14 @@
     "open": "Open"
   },
   "about": {
-    "title": "About project & author",
-    "methodTitle": "Method foundation",
-    "methodBody": "A synthesis of over 22 years of work with the body, consciousness, and state, plus the experience of 2000+ clients. I have combined the principles of osteopathy, the depth of ancient practices, and the achievements of modern neurophysiology into a single, logically built system.",
-    "roleTitle": "My role as a space guide",
-    "roleBody1": "I share my personal practical experience and lived path.",
-    "roleBody2": "I pass on only working, proven practices and methods.",
-    "roleBody3": "I conduct meditations and somatic tunings.",
-    "roleBody4": "I help distinguish the True from the False and accompany you out of other people's scenarios into your real life."
+    "title": "About the project",
+    "methodTitle": "About the platform",
+    "methodBody": "PULSAR is a digital platform for diagnostics, result tracking, and navigation across related materials. The project combines assessment flows, a user account area, a knowledge base, and administrative tools in a single interface.",
+    "roleTitle": "What the system includes",
+    "roleBody1": "Psychosomatic and physical diagnostics with saved results.",
+    "roleBody2": "User account and test history.",
+    "roleBody3": "Knowledge base with categories and standalone articles.",
+    "roleBody4": "Administrative tools for users, leads, roles, and content."
   },
   "auth": {
     "title": "Sign in required",

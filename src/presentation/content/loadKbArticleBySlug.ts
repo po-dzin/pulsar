@@ -13,6 +13,9 @@ const resolveArticleBody = (value: string, locale: Locale): string => {
   if (!normalized) {
     return getEmptyArticleBody(locale);
   }
+  if (/^src\/content\/kb\/.+\.md$/i.test(normalized)) {
+    return getEmptyArticleBody(locale);
+  }
   return normalized;
 };
 

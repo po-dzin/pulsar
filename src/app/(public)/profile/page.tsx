@@ -98,7 +98,7 @@ export default async function ProfilePage({
                 </div>
 
                 {/* ── Test history ── */}
-                <section style={{ marginTop: "var(--space-4)" }}>
+                <section className="profile-history-section">
                     <h2 className="profile-section-title">{d.profile.history}</h2>
                     <ProfileHistoryList items={history} locale={context.locale} dictionary={d} />
                 </section>

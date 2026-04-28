@@ -3,7 +3,7 @@
 import { useCallback, useMemo, useRef, useState } from "react";
 import type { Locale, AnswerValue, PsychoAnswers, PsychoScore } from "@/domain/psychosomatic/model";
 import { psychosomaticQuestions, getQuestionOptions, levelLabels, zoneLabels } from "@/domain/psychosomatic/questions";
-import { getSupabaseBrowserClient } from "@/infrastructure/supabase/client";
+import { signInWithGoogle } from "@/infrastructure/supabase/client";
 import { PhysicalDiagnosticsFlow } from "@/presentation/components/PhysicalDiagnosticsFlow";
 
 type Props = {
@@ -51,11 +51,13 @@ export const DiagnosticsFlow = ({ isAuthenticated, locale, labels, productsHref,
 
   const signIn = async () => {
     setBusy(true);
-    const supabase = getSupabaseBrowserClient();
-    const nextPath = `${window.location.pathname}${window.location.search}`;
-    const redirectTo = `${window.location.origin}/auth/callback?next=${encodeURIComponent(nextPath)}`;
-    await supabase.auth.signInWithOAuth({ provider: "google", options: { redirectTo } });
-    setBusy(false);
+    try {
+      const nextPath = `${window.location.pathname}${window.location.search}`;
+      const redirectTo = `${window.location.origin}/auth/callback?next=${encodeURIComponent(nextPath)}`;
+      await signInWithGoogle(redirectTo);
+    } finally {
+      setBusy(false);
+    }
   };
   const questionRefs = useRef<Map<number, HTMLElement>>(new Map());
 
@@ -195,8 +197,8 @@ export const DiagnosticsFlow = ({ isAuthenticated, locale, labels, productsHref,
             {labels.levelLabel}: <strong>{levelLabels[locale][result.level]}</strong>
           </p>
 
-          <div className="grid cols-2" style={{ gap: 12, marginTop: 16 }}>
-            <div className="card" style={{ padding: 14 }}>
+          <div className="grid cols-2 detail-grid">
+            <div className="card detail-card-compact">
               <h3>{labels.strongLabel}</h3>
               <ul>
                 {result.zonesStrong.map((zone) => (
@@ -206,7 +208,7 @@ export const DiagnosticsFlow = ({ isAuthenticated, locale, labels, productsHref,
                 ))}
               </ul>
             </div>
-            <div className="card" style={{ padding: 14 }}>
+            <div className="card detail-card-compact">
               <h3>{labels.growthLabel}</h3>
               <ul>
                 {result.zonesGrowth.map((zone) => (
@@ -218,12 +220,12 @@ export const DiagnosticsFlow = ({ isAuthenticated, locale, labels, productsHref,
             </div>
           </div>
 
-          <div className="card" style={{ padding: 16, marginTop: 12 }} data-testid="result-recommendations">
+          <div className="card detail-card-spaced" data-testid="result-recommendations">
             <h3>{labels.recommendationsLabel}</h3>
             {result.recommendations.map((block, idx) => (
-              <div key={idx} style={{ marginTop: idx > 0 ? 14 : 10 }}>
+              <div key={idx} className={idx > 0 ? "detail-block-offset-md" : "detail-block-offset-sm"}>
                 <strong>{block.title[locale]}</strong>
-                <ul style={{ marginTop: 6, marginBottom: 0 }}>
+                <ul className="detail-list-tight">
                   {block.items.map((item, itemIdx) => (
                     <li key={itemIdx}>{item[locale]}</li>
                   ))}
@@ -232,16 +234,16 @@ export const DiagnosticsFlow = ({ isAuthenticated, locale, labels, productsHref,
             ))}
           </div>
 
-          <div className="inline-row" style={{ marginTop: 16 }}>
-            <a href={productsHref} className="button button-primary" data-testid="cta-go-products">
+          <div className="inline-row result-actions">
+            <a href={productsHref} className="button button-primary button-page-cta" data-testid="cta-go-products">
               {labels.toProducts}
             </a>
-            <a href={knowledgeHref} className="button button-muted">
+            <a href={knowledgeHref} className="button button-muted button-page-cta">
               {labels.toKnowledge}
             </a>
             <button
               type="button"
-              className="button button-muted"
+              className="button button-muted button-page-cta"
               onClick={handleRestart}
               data-testid="restart-button"
             >
@@ -249,7 +251,7 @@ export const DiagnosticsFlow = ({ isAuthenticated, locale, labels, productsHref,
             </button>
             <button
               type="button"
-              className="button button-muted"
+              className="button button-muted button-page-cta"
               onClick={() => setActiveFlow("physical")}
             >
               {labels.testSelectorPhysical}
@@ -281,14 +283,14 @@ export const DiagnosticsFlow = ({ isAuthenticated, locale, labels, productsHref,
 
         <section className="card">
           <h2>{labels.testSelectorPsychosomatic}</h2>
-          <p style={{ whiteSpace: "pre-line" }}>{labels.description}</p>
+          <p className="text-pre-line">{labels.description}</p>
 
           {!isAuthenticated ? (
-            <div className="inline-row" style={{ marginTop: 12 }}>
-              <p className="muted" style={{ width: "100%", marginBottom: 8 }}>{labels.authRequiredToStart}</p>
+            <div className="inline-row stack-top-md">
+              <p className="muted inline-row-top">{labels.authRequiredToStart}</p>
               <button
                 type="button"
-                className="button button-primary"
+                className="button button-primary button-page-cta"
                 onClick={() => void signIn()}
                 disabled={busy}
                 data-testid="start-psychotest-button"
@@ -308,10 +310,10 @@ export const DiagnosticsFlow = ({ isAuthenticated, locale, labels, productsHref,
                 <span>{labels.consent}</span>
               </label>
 
-              <div className="inline-row" style={{ marginTop: 12 }}>
+              <div className="inline-row stack-top-md">
                 <button
                   type="button"
-                  className="button button-primary"
+                  className="button button-primary button-page-cta"
                   onClick={() => setStarted(true)}
                   disabled={!consent}
                   data-testid="start-psychotest-button"
@@ -399,10 +401,10 @@ export const DiagnosticsFlow = ({ isAuthenticated, locale, labels, productsHref,
       </div>
 
       {/* Submit button */}
-      <div className="inline-row" style={{ marginTop: 16 }}>
+      <div className="inline-row result-actions">
         <button
           type="button"
-          className="button button-primary"
+          className="button button-primary button-page-cta"
           onClick={handleSubmit}
           disabled={!allAnswered || busy}
           data-testid="question-next-button"
@@ -412,7 +414,7 @@ export const DiagnosticsFlow = ({ isAuthenticated, locale, labels, productsHref,
       </div>
 
       {/* History */}
-      <section style={{ marginTop: 24 }}>
+      <section className="stack-top-2xl">
         <h3>{labels.historyTitle}</h3>
         <div className="list">
           {!isAuthenticated ? <p className="muted">{labels.historyGuestEmpty}</p> : null}

@@ -16,7 +16,7 @@ export const PrintPdfButton = ({
     label,
     loadingLabel = "Loading...",
     targetId,
-    filename = "Impulse_Diagnostics.pdf",
+    filename = "Pulsar_Diagnostics.pdf",
     testId = "download-pdf-button",
 }: Props) => {
     const [isGenerating, setIsGenerating] = useState(false);
@@ -66,10 +66,9 @@ export const PrintPdfButton = ({
     return (
         <button
             type="button"
-            className="button button-muted print-hidden"
+            className="button button-muted print-hidden print-pdf-button"
             onClick={handleDownload}
             disabled={isGenerating}
-            style={{ fontSize: "0.85rem" }}
             data-testid={testId}
         >
             <svg
@@ -81,7 +80,7 @@ export const PrintPdfButton = ({
                 strokeWidth="2"
                 strokeLinecap="round"
                 strokeLinejoin="round"
-                style={{ marginRight: 6 }}
+                className="print-pdf-icon"
             >
                 <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
                 <polyline points="7 10 12 15 17 10" />

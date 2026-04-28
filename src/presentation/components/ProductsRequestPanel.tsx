@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { getSupabaseBrowserClient } from "@/infrastructure/supabase/client";
+import { signInWithGoogle } from "@/infrastructure/supabase/client";
 
 type Labels = {
   requestButton: string;
@@ -31,14 +31,13 @@ export const ProductsRequestPanel = ({ isAuthenticated, labels }: Props) => {
 
   const signIn = async () => {
     setBusy(true);
-    const supabase = getSupabaseBrowserClient();
-    const nextPath = `${window.location.pathname}${window.location.search}`;
-    const redirectTo = `${window.location.origin}/auth/callback?next=${encodeURIComponent(nextPath)}`;
-    await supabase.auth.signInWithOAuth({
-      provider: "google",
-      options: { redirectTo, queryParams: { prompt: "select_account" } },
-    });
-    setBusy(false);
+    try {
+      const nextPath = `${window.location.pathname}${window.location.search}`;
+      const redirectTo = `${window.location.origin}/auth/callback?next=${encodeURIComponent(nextPath)}`;
+      await signInWithGoogle(redirectTo);
+    } finally {
+      setBusy(false);
+    }
   };
 
   const submit = async (event: React.FormEvent) => {
@@ -67,12 +66,12 @@ export const ProductsRequestPanel = ({ isAuthenticated, labels }: Props) => {
   };
 
   return (
-    <section style={{ marginTop: "var(--space-4)" }} data-testid="products-request-panel">
+    <section className="content-stack-md" data-testid="products-request-panel">
       {isAuthenticated ? (
-        <div className="inline-row" style={{ justifyContent: "flex-start", gap: "16px", alignItems: "center" }}>
+        <div className="inline-row inline-row-start">
           <button
             type="button"
-            className="button button-primary"
+            className="button button-primary button-page-cta"
             data-testid="products-request-open-button"
             onClick={() => {
               setModalOpen(true);
@@ -83,10 +82,10 @@ export const ProductsRequestPanel = ({ isAuthenticated, labels }: Props) => {
           </button>
         </div>
       ) : (
-        <div className="inline-row" style={{ justifyContent: "flex-start", gap: "16px", alignItems: "center" }}>
+        <div className="inline-row inline-row-start">
           <button
             type="button"
-            className="button button-accent"
+            className="button button-primary button-page-cta"
             data-testid="products-signin-button"
             onClick={signIn}
             disabled={busy}
@@ -98,7 +97,7 @@ export const ProductsRequestPanel = ({ isAuthenticated, labels }: Props) => {
 
       {modalOpen ? (
         <div className="confirm-dialog-overlay" data-testid="products-request-modal">
-          <div className="confirm-dialog" style={{ maxWidth: "720px" }}>
+          <div className="confirm-dialog dialog-wide">
             <h3 className="confirm-dialog-title">{labels.modalTitle}</h3>
             <form onSubmit={submit} className="list" data-testid="consultation-form">
               <label className="field">
@@ -132,17 +131,17 @@ export const ProductsRequestPanel = ({ isAuthenticated, labels }: Props) => {
                 />
               </label>
 
-              <div className="confirm-dialog-actions" style={{ marginTop: "6px" }}>
+              <div className="confirm-dialog-actions dialog-actions-tight">
                 <button
                   type="button"
-                  className="button button-muted"
+                  className="button button-muted button-page-cta"
                   onClick={() => setModalOpen(false)}
                   data-testid="products-request-cancel"
                 >
                   {labels.cancel}
                 </button>
                 <button
-                  className="button button-primary"
+                  className="button button-primary button-page-cta"
                   type="submit"
                   data-testid="consultation-form-submit"
                   disabled={status === "loading"}

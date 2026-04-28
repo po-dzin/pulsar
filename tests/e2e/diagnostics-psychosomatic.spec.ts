@@ -57,7 +57,7 @@ test.describe("Psychosomatic diagnostics flow", () => {
       );
 
       window.localStorage.setItem(
-        "impulse_psychosomatic_pending_v1",
+        "pulsar_psychosomatic_pending_v1",
         JSON.stringify({
           sessionId: crypto.randomUUID(),
           answers,
@@ -70,7 +70,7 @@ test.describe("Psychosomatic diagnostics flow", () => {
     await page.reload();
 
     await expect(page.getByTestId("result-card")).toBeVisible();
-    const pending = await page.evaluate(() => window.localStorage.getItem("impulse_psychosomatic_pending_v1"));
+    const pending = await page.evaluate(() => window.localStorage.getItem("pulsar_psychosomatic_pending_v1"));
     expect(pending).toBeNull();
   });
 });

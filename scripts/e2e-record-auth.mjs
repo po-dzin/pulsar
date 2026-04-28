@@ -24,7 +24,7 @@ const waitForEnter = async () => {
 
 const main = async () => {
   await ensureDir(outputPath);
-  const userDataDir = await mkdtemp(join(tmpdir(), "impulse-e2e-auth-"));
+  const userDataDir = await mkdtemp(join(tmpdir(), "pulsar-e2e-auth-"));
 
   const context = await chromium.launchPersistentContext(userDataDir, {
     headless: false,

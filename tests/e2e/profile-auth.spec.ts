@@ -32,7 +32,7 @@ test.describe("Authenticated profile flow", () => {
       );
 
       window.localStorage.setItem(
-        "impulse_psychosomatic_pending_v1",
+        "pulsar_psychosomatic_pending_v1",
         JSON.stringify({
           sessionId: crypto.randomUUID(),
           answers,
