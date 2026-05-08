@@ -13,7 +13,7 @@ export const UiModeToggle = () => {
                 event.currentTarget.blur();
             }}
             aria-label="Toggle UI Mode"
-            title={mode === "bento" ? "Switch to Standard Mode" : "Switch to Bento Mode"}
+            title={mode === "bento" ? "Switch to Standard Mode" : "Switch to BNT Mode"}
         >
             {mode === "bento" ? "BNT" : "STD"}
         </button>
