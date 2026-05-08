@@ -1,5 +1,5 @@
 {
-  "brand": "IMPULSE",
+  "brand": "PULSAR",
   "nav": {
     "mission": "Mission",
     "diagnostics": "Diagnostics",
@@ -9,7 +9,7 @@
   },
   "common": {
     "primaryCta": "Start diagnostics",
-    "disclaimer": "IMPULSE diagnostics is a self-observation tool and not a medical diagnosis.",
+    "disclaimer": "PULSAR diagnostics is a self-observation tool and not a medical diagnosis.",
     "language": "Language",
     "loading": "Loading..."
   },

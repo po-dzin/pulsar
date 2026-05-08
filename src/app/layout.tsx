@@ -3,8 +3,8 @@ import "./brand-tokens.css";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "IMPULSE",
-  description: "IMPULSE diagnostics and transformation portal",
+  title: "Pulsar",
+  description: "Pulsar diagnostics and transformation portal",
 };
 
 import { UiModeProvider } from "@/presentation/components/UiModeProvider";
